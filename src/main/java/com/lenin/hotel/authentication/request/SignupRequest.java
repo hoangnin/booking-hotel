@@ -21,7 +21,7 @@ public class SignupRequest {
 
     private Set<String> role;
 
-    @NotBlank(message = "Password cannot be empty")
+//    @NotBlank(message = "Password cannot be empty")
     @Size(min = 8, max = 30, message = "Password must be between 8 and 30 characters")
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=.*[0-9]).{8,}$",
             message = "Password must contain at least one uppercase letter, one special character (@#$%^&+=!), and one number")

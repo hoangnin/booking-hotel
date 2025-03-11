@@ -1,4 +1,4 @@
-package com.lenin.hotel.authentication.service;
+package com.lenin.hotel.authentication.security;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.lenin.hotel.authentication.model.User;
@@ -22,17 +22,20 @@ public class UserDetailsImpl implements UserDetails {
 
     private String email;
 
+    private String banReason;
+
     @JsonIgnore
     private String password;
 
     private Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsImpl(Long id, String username, String email, String password,
+    public UserDetailsImpl(Long id, String username, String email, String password, String banReason,
                            Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.password = password;
+        this.banReason = banReason;
         this.authorities = authorities;
     }
 
@@ -46,6 +49,7 @@ public class UserDetailsImpl implements UserDetails {
                 user.getUsername(),
                 user.getEmail(),
                 user.getPassword(),
+                user.getBanReason(),
                 authorities);
     }
 
@@ -81,7 +85,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return banReason == null || banReason.isEmpty();
     }
 
     @Override

@@ -1,6 +1,5 @@
 package com.lenin.hotel.authentication.security;
 
-import com.lenin.hotel.authentication.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

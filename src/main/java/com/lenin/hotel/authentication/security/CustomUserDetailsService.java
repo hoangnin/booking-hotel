@@ -1,21 +1,19 @@
-package com.lenin.hotel.authentication.service;
+package com.lenin.hotel.authentication.security;
 
 import com.lenin.hotel.authentication.model.User;
 import com.lenin.hotel.authentication.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
 @Service
+@AllArgsConstructor
 public class CustomUserDetailsService  implements UserDetailsService {
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User Not Found with username: " + username);
-        }
+
         return UserDetailsImpl.build(user);
     }
 }

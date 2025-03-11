@@ -1,6 +1,6 @@
 package com.lenin.hotel.authentication.repository;
 
-import com.lenin.hotel.authentication.enumuration.ERole;
+import com.lenin.hotel.common.enumuration.ERole;
 import com.lenin.hotel.authentication.model.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 

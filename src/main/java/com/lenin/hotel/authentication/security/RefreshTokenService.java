@@ -1,10 +1,10 @@
-package com.lenin.hotel.authentication.service;
+package com.lenin.hotel.authentication.security;
 
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.lenin.hotel.authentication.exception.TokenRefreshException;
+import com.lenin.hotel.common.exception.TokenRefreshException;
 import com.lenin.hotel.authentication.model.RefreshToken;
 import com.lenin.hotel.authentication.repository.RefreshTokenRepository;
 import com.lenin.hotel.authentication.repository.UserRepository;
