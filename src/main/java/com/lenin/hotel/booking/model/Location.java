@@ -1,24 +1,28 @@
-package com.lenin.hotel.authentication.model;
+package com.lenin.hotel.booking.model;
 
-import com.lenin.hotel.common.enumuration.ERole;
+import com.lenin.hotel.hotel.model.Hotel;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @Entity
-@Table(name = "roles")
-@Data
-public class Role {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Location {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+    private String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private ERole name;
+    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Hotel> hotels;
 
     @Column(name = "create_dt")
     @CreationTimestamp
