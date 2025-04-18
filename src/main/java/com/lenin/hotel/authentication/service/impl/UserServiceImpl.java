@@ -1,22 +1,25 @@
 package com.lenin.hotel.authentication.service.impl;
 
+import com.lenin.hotel.authentication.dto.request.*;
 import com.lenin.hotel.authentication.model.RefreshToken;
 import com.lenin.hotel.authentication.model.Role;
 import com.lenin.hotel.authentication.model.User;
 import com.lenin.hotel.authentication.repository.RoleRepository;
 import com.lenin.hotel.authentication.repository.UserRepository;
-import com.lenin.hotel.authentication.request.LoginRequest;
-import com.lenin.hotel.authentication.request.ResetPasswordRequest;
-import com.lenin.hotel.authentication.request.SignupRequest;
-import com.lenin.hotel.authentication.response.JwtResponse;
+import com.lenin.hotel.authentication.dto.response.JwtResponse;
 import com.lenin.hotel.authentication.security.JwtUtil;
 import com.lenin.hotel.authentication.security.UserDetailsImpl;
 import com.lenin.hotel.authentication.service.IUserService;
 import com.lenin.hotel.authentication.security.RefreshTokenService;
-import com.lenin.hotel.common.EmailService;
+import com.lenin.hotel.common.enumuration.ImageType;
+import com.lenin.hotel.common.service.IEmailService;
 import com.lenin.hotel.common.enumuration.ERole;
 import com.lenin.hotel.common.exception.BusinessException;
 import com.lenin.hotel.common.exception.ResourceNotFoundException;
+import com.lenin.hotel.hotel.dto.request.ImageRequest;
+import com.lenin.hotel.hotel.dto.response.UserResponse;
+import com.lenin.hotel.hotel.model.Image;
+import com.lenin.hotel.hotel.repository.ImageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,7 +28,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.lenin.hotel.authentication.utils.UserUtils.buildUserResponse;
 import static com.lenin.hotel.common.utils.SecurityUtils.getCurrentUsername;
+import static com.lenin.hotel.hotel.utils.ImageUtils.buildImage;
 
 
 @Service
@@ -44,12 +48,13 @@ import static com.lenin.hotel.common.utils.SecurityUtils.getCurrentUsername;
 public class UserServiceImpl implements IUserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final EmailService emailService;
+    private final IEmailService IEmailService;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
     private final RoleRepository roleRepository;
     private final PasswordEncoder encoder;
+    private final ImageRepository imageRepository;
 
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss z");
 
@@ -68,7 +73,7 @@ public class UserServiceImpl implements IUserService {
         user.setRoles(roles);
         user.setBanReason("Not active yet");
         userRepository.save(user);
-        emailService.sendMailActiveAccount(user.getUsername(), user.getEmail(), jwtUtil.generateToken(user.getEmail()));
+        IEmailService.sendMailActiveAccount(user.getUsername(), user.getEmail(), jwtUtil.generateToken(user.getEmail()));
         return Map.of("message","User registered successfully! Please check your email to activate your account!");
     }
 
@@ -96,7 +101,11 @@ public class UserServiceImpl implements IUserService {
             String jwt = jwtUtil.generateToken(userDetails);
             List<String> roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
-            return ResponseEntity.ok(new JwtResponse(jwt, refreshToken.getToken(), userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles));
+            //avatar
+            List<Image> avatars = imageRepository.findByReferenceIdAndReferenceTableAndType(userDetails.getId().intValue(), "users", ImageType.HOTEL);
+            String avatarUrl = avatars.stream().findFirst().map(Image::getUrl).orElse(null);
+
+            return ResponseEntity.ok(new JwtResponse(jwt, refreshToken.getToken(), userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles, avatarUrl));
         } catch (BadCredentialsException e) {
             user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
             if (user.getFailedLoginAttempts() >= 5) {
@@ -113,6 +122,9 @@ public class UserServiceImpl implements IUserService {
         }
         String username = getCurrentUsername();
         User user = userRepository.getByUsername(username).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new BusinessException("Current password is incorrect");
+        }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         return Map.of("message", "Password changed successfully");
@@ -122,17 +134,40 @@ public class UserServiceImpl implements IUserService {
         return changePasswordProcess(request);
     }
 
+    @Override
+    public void updateProfile(UpdateProfileRequest update) {
+        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -> new RuntimeException("User not found!"));
+        user.setEmail(update.getEmail());
+        user.setAddress(update.getAddress());
+        user.setPhoneNumber(update.getPhoneNumber());
+        if (update.getAvatarUrl() != null) {
+            List<Image> image = imageRepository.findByReferenceIdAndReferenceTableAndType(user.getId().intValue(), "users", ImageType.HOTEL);
+            if (!image.isEmpty()) {
+                image.get(0).setUrl(update.getAvatarUrl());
+                imageRepository.save(image.get(0));
+            } else {
+                ImageRequest imageRequest = ImageRequest.builder()
+                        .url(update.getAvatarUrl())
+                        .type(ImageType.HOTEL)
+                        .build();
+                Image newImage = buildImage(imageRequest, user.getId().intValue(), "users");
+                imageRepository.save(newImage);
+            }
+        }
+        userRepository.save(user);
+    }
+
     public Map<String, String> forgotPassword(String email) {
         if (userRepository.existsByEmail(email)) {
             User user = userRepository.findByEmail(email);
-            if (user.getBanUntil().isBefore(ZonedDateTime.now()))
+            if (user.getBanUntil()!=null && user.getBanUntil().isBefore(ZonedDateTime.now()))
                 throw new BusinessException("Your account has been banned until " + formatter.format(user.getBanUntil()));
-            emailService.sendMailForgotPassword(user.getUsername(), user.getEmail(), jwtUtil.generateToken(email));
+            IEmailService.sendMailForgotPassword(user.getUsername(), user.getEmail(), jwtUtil.generateToken(email));
         }
         return Map.of("message", "If your email exist in our system, then you will receive instructions on resetting your password.");
     }
 
-    public Map<String, String> forgotPassword(String token, ResetPasswordRequest request) {
+    public Map<String, String> forgotPassword(String token, ForgotPasswordRequest request) {
         boolean validToken = jwtUtil.validateJwtToken(token);
         if (validToken) {
             if (!request.getNewPassword().equals(request.getConfirmPassword())) {
@@ -154,10 +189,39 @@ public class UserServiceImpl implements IUserService {
             User user = userRepository.getByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
             user.setBanReason(null);
             userRepository.save(user);
-            emailService.sendMailSignupSuccess(user.getUsername(), user.getEmail());
+            IEmailService.sendMailSignupSuccess(user.getUsername(), user.getEmail());
             return Map.of("message", "Account activated successfully");
         } else
             throw new BusinessException("Invalid or expired token, please try again ");
     }
+
+    @Override
+    public UserResponse getHotelOwner(Integer id) {
+        User user = userRepository.getById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel owner id not found!"));
+
+        // Chỉ trả về nếu user có role HOTEL_OWNER
+        boolean isHotelOwner = user.getRoles().stream()
+                .anyMatch(role -> role.getName().equals(ERole.ROLE_HOTEL));
+
+        if (!isHotelOwner) {
+            throw new ResourceNotFoundException("User is not a hotel owner!");
+        }
+
+        UserResponse userResponse = buildUserResponse(user, imageRepository);
+
+
+
+        return userResponse;
+    }
+
+    @Override
+    public UserResponse getUserInfo() {
+        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        UserResponse userResponse = buildUserResponse(user, imageRepository);
+        return userResponse;
+    }
+
+
 }
 

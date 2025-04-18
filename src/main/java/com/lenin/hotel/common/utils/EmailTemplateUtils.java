@@ -2,10 +2,39 @@ package com.lenin.hotel.common.utils;
 
 
 
+import com.lenin.hotel.booking.model.Booking;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 
 public class EmailTemplateUtils {
+    public static String bookingSuccessEmail(Booking booking) {
+        return String.format(
+                "Subject: 🏨 Booking Confirmation - %s\n\n" +
+                        "Dear %s,\n\n" +
+                        "We are pleased to confirm your booking at **%s**!\n\n" +
+                        "📅 Check-in Date: %s\n" +
+                        "📅 Check-out Date: %s\n\n" +
+                        "Booking Details:\n" +
+                        "- Booking ID: #%d\n" +
+                        "- Status: %s\n" +
+                        "- Special Notes: %s\n\n" +
+                        "📍 Hotel Location: %s\n\n" +
+                        "💰 Price Tracking Reference: %s\n\n" +
+                        "Thank you for choosing Vinova for your stay! If you have any questions, feel free to contact us.\n\n" +
+                        "Best regards,\n" +
+                        "Vinova Team\n",
+                booking.getHotel().getName(),  // Subject includes hotel name
+                booking.getUser().getUsername(),  // Greeting
+                booking.getHotel().getName(),  // Hotel Name
+                booking.getCheckIn().toLocalDate(),  // Check-in Date
+                booking.getCheckOut().toLocalDate(),  // Check-out Date
+                booking.getId(),  // Booking ID
+                booking.getStatus(),  // Booking Status
+                booking.getNote() != null ? booking.getNote() : "N/A",  // Special Notes (if any)
+                booking.getHotel().getAddress(),  // Hotel Location (Assuming Hotel has `getLocation()`)
+                booking.getPriceTracking().getId()  // Price Tracking Reference
+        );
+    }
 
     public static String signupSuccessEmail(String username) {
         return String.format(
@@ -33,7 +62,7 @@ public class EmailTemplateUtils {
                         "Hello %s,\n\n" +
                         "We received a request to reset your password for your Vinova account associated with %s.\n\n" +
                         "To reset your password, please click the link below:\n\n" +
-                        "🔗 %s/%s?%s\n\n" +
+                        "🔗 %s/%s?token=%s\n\n" +
                         "This link is valid for a limited time. If you did not request a password reset, please ignore this email.\n\n" +
                         "For security reasons, never share your password with anyone.\n\n" +
                         "If you need further assistance, feel free to contact us at [gillkaijame@gmail.com].\n\n" +

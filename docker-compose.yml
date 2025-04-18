@@ -1,14 +1,54 @@
-version: '3'
+version: '3.8'
 
 services:
-  db:
-    image: postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: hotel
-    volumes:
-      - ./data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d
-    ports:
-      - 5432:5432
+    db:
+      image: "postgres:17.4"
+      container_name: db
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: hotel
+      volumes:
+        - ./data:/var/lib/postgresql/data
+        - ./init-scripts:/docker-entrypoint-initdb.d
+      ports:
+        - 5432:5432
+      healthcheck:
+        test: [ "CMD", "pg_isready", "-U", "postgres" ]
+        interval: 10s
+        retries: 5
+        start_period: 5s
+    app:
+      image: 'hotel-backend'
+      build:
+        context: .
+      container_name: app
+      depends_on:
+        - db
+      environment:
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=postgres
+        - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/hotel
+        - SPRING_DATASOURCE_USERNAME=postgres
+        - SPRING_DATASOURCE_PASSWORD=postgres
+        - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+      ports:
+        - 8080:8080
+
+
+#  frontend:
+#    image: node:20
+#    container_name: hotel-frontend
+#    restart: always
+#    working_dir: /app
+#    volumes:
+#      - ./frontend:/app
+#    ports:
+#      - 3000:3000
+#    command: sh -c "npm install && npm start"
+#    depends_on:
+#      - backend
+#    networks:
+#      - app-network
+

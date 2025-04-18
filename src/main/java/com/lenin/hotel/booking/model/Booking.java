@@ -18,7 +18,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-//@org.hibernate.annotations.SQLRestriction("EXCLUDE USING gist (hotel_id WITH =, tstzrange(check_in, check_out, '[]') WITH &&)")
+@Table(name = "Bookings")
 public class Booking {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

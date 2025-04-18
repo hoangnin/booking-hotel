@@ -1,7 +1,6 @@
 package com.lenin.hotel.hotel.model;
 
 import com.lenin.hotel.booking.model.Booking;
-import com.lenin.hotel.common.enumuration.Currency;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,14 +23,11 @@ public class PriceTracking {
 
     private BigDecimal price;
 
-    @Enumerated
-    private Currency currency;
-
-    @Column(name = "valid_from", nullable = false)
-    private ZonedDateTime validFrom;
-
-    @Column(name = "valid_to")
-    private ZonedDateTime validTo;
+//    @Column(name = "valid_from", nullable = false)
+//    private ZonedDateTime validFrom;
+//
+//    @Column(name = "valid_to")
+//    private ZonedDateTime validTo;
 
     @ManyToOne
     @JoinColumn(name = "hotel_id", nullable = false)

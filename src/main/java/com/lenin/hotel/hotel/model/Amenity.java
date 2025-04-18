@@ -16,6 +16,7 @@ import java.util.List;
 @Data
 @Builder
 @AllArgsConstructor
+@Table(name = "Amenities")
 public class Amenity {
 
     @Id
@@ -24,7 +25,6 @@ public class Amenity {
 
     @Column(nullable = false, unique = true)
     private String name;
-    private String icon;
 
     @Column(nullable = false)
     private Boolean available = true;

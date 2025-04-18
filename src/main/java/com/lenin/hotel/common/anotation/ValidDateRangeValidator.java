@@ -2,7 +2,7 @@ package com.lenin.hotel.common.anotation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import com.lenin.hotel.hotel.request.PriceTrackingRequest;
+import com.lenin.hotel.hotel.dto.request.PriceTrackingRequest;
 
 public class ValidDateRangeValidator implements ConstraintValidator<ValidDateRange, PriceTrackingRequest> {
     @Override

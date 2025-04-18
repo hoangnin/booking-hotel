@@ -14,13 +14,12 @@ import java.time.ZonedDateTime;
 @Builder
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Table(name = "images")
 public class Image {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    //@Lob (Large Object) giúp lưu dữ liệu lớn hơn 255 ký tự.
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String url;
     @Enumerated(EnumType.STRING)
@@ -32,9 +31,6 @@ public class Image {
     @Column(nullable = false)
     private String referenceTable;
 
-//    @ManyToOne
-//    @JoinColumn(name = "review_id", nullable = false)
-//    private Review review;
 
     @Column(name = "create_dt")
     @CreationTimestamp
