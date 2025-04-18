@@ -7,4 +7,6 @@ import java.util.List;
 import java.util.Set;
 
 public interface AmenityRepository extends JpaRepository<Amenity, Integer> {
+    List<Amenity> findAllByIdIn(List<String> ids);
+
 }

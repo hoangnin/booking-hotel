@@ -7,8 +7,5 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 
 public interface PriceTrackingRepository extends JpaRepository<PriceTracking, Integer> {
-    Optional<PriceTracking> findByHotelIdAndValidFromBeforeAndValidToAfter(Integer hotelId, ZonedDateTime now1, ZonedDateTime now2);
-    Optional<PriceTracking> findTopByHotelIdAndValidToBeforeOrderByValidToDesc(Integer hotelId, ZonedDateTime now);
-    Optional<PriceTracking> findTopByHotelIdAndValidFromAfterOrderByValidFromAsc(Integer hotelId, ZonedDateTime now);
-
+    Optional<PriceTracking> findTopByHotelIdOrderByCreateDtDesc(Long hotelId);
 }

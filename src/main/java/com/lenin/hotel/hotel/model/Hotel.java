@@ -20,6 +20,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "hotels")
 public class Hotel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,9 +31,19 @@ public class Hotel {
     private String address;
     private String phone;
     private String email;
+    private String avatar;
     private Double rating;
-    private Integer reviews;
+    private Integer totalReview = 0;
     private String policy;
+
+    @Column(name = "latitude", nullable = false)
+    private Double latitude; // Tọa độ Lat
+
+    @Column(name = "longitude", nullable = false)
+    private Double longitude; // Tọa độ Lng
+
+    @Column(name = "google_map_embed", columnDefinition = "TEXT")
+    private String googleMapEmbed; // Link nhúng Google Map (iframe URL)
 
     @ManyToMany(mappedBy = "favoriteHotels")
     private Set<User> userFavorited = new HashSet<>();
@@ -42,6 +53,9 @@ public class Hotel {
 
     @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PriceTracking> priceTrackings;
+
+    @OneToMany(mappedBy = "hotel", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Review> reviews = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "location_id", nullable = false)
@@ -55,8 +69,8 @@ public class Hotel {
     )
     private List<Amenity> amenities = new ArrayList<>();
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "owner_id", unique = true)
+    @ManyToOne
+    @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
     @Column(name = "create_dt")

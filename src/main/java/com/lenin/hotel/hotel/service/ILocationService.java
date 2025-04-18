@@ -6,4 +6,6 @@ import java.util.Map;
 
 public interface ILocationService {
     void createLocation(Map<String, String> location);
+
+    Object getAllLocation();
 }

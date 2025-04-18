@@ -1,17 +1,20 @@
 package com.lenin.hotel.common.exception;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.lenin.hotel.authentication.advice.ErrorMessage;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.sql.SQLException;
 import java.util.Date;
@@ -84,11 +87,43 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", "System error. Please try again later."));
     }
 
-    // General error handler for any unhandled exceptions
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleJsonParseException(HttpMessageNotReadableException ex) {
+        Throwable rootCause = ex.getRootCause();
+
+        if (rootCause instanceof InvalidFormatException) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", "Invalid date format. Please use ISO-8601 format like 'yyyy-MM-dd'T'HH:mm:ssX'"));
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", "Malformed JSON request"));
+    }
+
+    @ExceptionHandler(StripeException.InvalidSignatureException.class)
+    public ResponseEntity<String> handleInvalidSignatureException(StripeException.InvalidSignatureException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(StripeException.InvalidPayloadException.class)
+    public ResponseEntity<String> handleInvalidPayloadException(StripeException.InvalidPayloadException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(StripeException.OrderUpdateFailedException.class)
+    public ResponseEntity<String> handleOrderUpdateFailedException(StripeException.OrderUpdateFailedException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGeneralException(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("message", "An error occurred. Please try again later."));
+    public ResponseEntity<String> handleGenericException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error");
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, String>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "Invalid date-time format! Please use the format: yyyy-MM-dd'T'HH:mm:ssX"));
     }
 
 }

@@ -11,6 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.ZonedDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -25,8 +26,9 @@ public class User {
     private Long id;
 
     @NotBlank
-    @Size(max = 20)
     private String username;
+
+    private String address;
 
     @NotBlank
     @Size(max = 50)
@@ -34,14 +36,12 @@ public class User {
     @Column(unique = true)
     private String email;
 
-    @NotBlank
-    @Size(max = 120)
     private String password;
 
     private String banReason;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_roles",
+    @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
@@ -60,19 +60,12 @@ public class User {
         this.password = encode;
     }
 
-    @ManyToMany
-    @JoinTable(
-            name = "favorite",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "hotel_id")
-    )
-    private Set<Hotel> favoriteUsers = new HashSet<>();
-
     private int failedLoginAttempts = 0;
     private ZonedDateTime banUntil;
+    private String phoneNumber;
 
-    @OneToOne(mappedBy = "owner")
-    private Hotel hotel;
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Hotel> hotels;
 
     @Column(name = "create_dt")
     @CreationTimestamp
@@ -81,4 +74,8 @@ public class User {
     @Column(name = "update_dt")
     @UpdateTimestamp
     private ZonedDateTime updateDt;
+
+    public void addRole(Role role) {
+        this.roles.add(role);
+    }
 }

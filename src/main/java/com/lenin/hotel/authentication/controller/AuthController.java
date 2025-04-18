@@ -1,18 +1,15 @@
 package com.lenin.hotel.authentication.controller;
 
+import com.lenin.hotel.authentication.dto.request.*;
 import com.lenin.hotel.common.exception.TokenRefreshException;
 import com.lenin.hotel.authentication.model.RefreshToken;
-import com.lenin.hotel.authentication.request.LoginRequest;
-import com.lenin.hotel.authentication.request.ResetPasswordRequest;
-import com.lenin.hotel.authentication.request.SignupRequest;
-import com.lenin.hotel.authentication.request.TokenRefreshRequest;
-import com.lenin.hotel.authentication.response.MessageResponse;
-import com.lenin.hotel.authentication.response.TokenRefreshResponse;
+import com.lenin.hotel.authentication.dto.response.MessageResponse;
+import com.lenin.hotel.authentication.dto.response.TokenRefreshResponse;
 import com.lenin.hotel.authentication.security.JwtUtil;
 import com.lenin.hotel.authentication.security.RefreshTokenService;
 import com.lenin.hotel.authentication.security.UserDetailsImpl;
 import com.lenin.hotel.authentication.service.impl.UserServiceImpl;
-import com.lenin.hotel.common.EmailService;
+import com.lenin.hotel.common.service.IEmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +29,7 @@ public class AuthController {
     private final RefreshTokenService refreshTokenService;
     private final UserDetailsService userDetailsService;
 
-    private final EmailService emailService;
+    private final IEmailService IEmailService;
     private final UserServiceImpl userServiceImpl;
 
     @PostMapping("/signin")
@@ -62,8 +59,7 @@ public class AuthController {
                     String token = jwtUtils.generateToken(userDetails);
                     return ResponseEntity.ok(new TokenRefreshResponse(token, requestRefreshToken));
                 })
-                .orElseThrow(() -> new TokenRefreshException(requestRefreshToken,
-                        "Refresh token is not in database!"));
+                .orElseThrow(() -> new TokenRefreshException("Refresh token is not in database!"));
     }
     @PostMapping("/signout")
     public ResponseEntity<?> signOutUser() {
@@ -89,7 +85,7 @@ public class AuthController {
         return ResponseEntity.ok(userServiceImpl.forgotPassword(request.get("email")));
     }
     @PostMapping("/forgotPassword/{token}")
-    public ResponseEntity<?> forgotPassword(@PathVariable String token, @Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<?> forgotPassword(@PathVariable String token, @Valid @RequestBody ForgotPasswordRequest request) {
         return ResponseEntity.ok(userServiceImpl.forgotPassword(token, request));
     }
 

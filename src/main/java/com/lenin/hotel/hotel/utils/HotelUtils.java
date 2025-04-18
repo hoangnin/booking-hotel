@@ -1,33 +1,38 @@
 package com.lenin.hotel.hotel.utils;
 
-import com.lenin.hotel.hotel.model.Amenity;
-import com.lenin.hotel.hotel.model.Hotel;
-import com.lenin.hotel.hotel.model.Image;
-import com.lenin.hotel.hotel.model.PriceTracking;
-import com.lenin.hotel.hotel.request.HotelRequest;
-import com.lenin.hotel.hotel.request.ImageRequest;
-import com.lenin.hotel.hotel.request.PriceTrackingRequest;
-import com.lenin.hotel.hotel.response.AmenityResponse;
-import com.lenin.hotel.hotel.response.HotelResponse;
+import com.lenin.hotel.booking.model.Location;
+import com.lenin.hotel.hotel.dto.response.*;
+import com.lenin.hotel.hotel.model.*;
+import com.lenin.hotel.hotel.dto.request.HotelRequest;
+import com.lenin.hotel.hotel.dto.request.ImageRequest;
+import com.lenin.hotel.hotel.dto.request.PriceTrackingRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.function.Function;
 
 public class HotelUtils {
-    public static PriceTracking buildPriceTracking(PriceTrackingRequest price) {
-        return PriceTracking.builder()
-                .price(price.getPrice())
-                .currency(price.getCurrency())
-                .validFrom(price.getFromValid())
-                .validTo(price.getToValid())
+    public static ReviewResponse buildReviewResponse(Review review) {
+        return ReviewResponse.builder()
+                .id(review.getId())
+                .rating(review.getRating())
+                .content(review.getContent())
                 .build();
     }
 
-    public static HotelResponse buildHotelResponse(Hotel hotel, List<Image> images, BigDecimal currentPrice) {
+    public static PriceTracking buildPriceTracking(PriceTrackingRequest price) {
+        return PriceTracking.builder()
+                .price(price.getPrice())
+//                .validFrom(price.getFromValid())
+//                .validTo(price.getToValid())
+                .build();
+    }
+
+    public static HotelResponse buildHotelResponse(Hotel hotel, List<Image> images, BigDecimal currentPrice, List<BookedDateRange> bookedDateRanges) {
         return buildHotelResponse(hotel).toBuilder()
                 .images(images.stream().map(HotelUtils::buildImageResponse).toList())
                 .price(currentPrice)
+                .bookedDateRange(bookedDateRanges)
                 .build();
     }
 
@@ -44,6 +49,12 @@ public class HotelUtils {
                 .amenity(hotel.getAmenities().stream()
                         .map(HotelUtils::buildAmenityResponse)
                         .toList())
+                .reviews(hotel.getTotalReview())
+                .rating(hotel.getRating())
+                .longitude(hotel.getLongitude())
+                .latitude(hotel.getLatitude())
+                .googleMapEmbed(hotel.getGoogleMapEmbed())
+                .location(hotel.getLocation().getName())
                 .build();
     }
 
@@ -51,13 +62,13 @@ public class HotelUtils {
             image -> ImageRequest.builder()
                     .url(image.getUrl())
                     .type(image.getType())
+                    .id(String.valueOf(image.getId()))
                     .build();
 
     private static final Function<Amenity, AmenityResponse> AMENITY_MAPPER =
             amenity -> AmenityResponse.builder()
                     .id(amenity.getId())
                     .name(amenity.getName())
-                    .icon(amenity.getIcon())
                     .build();
 
     public static ImageRequest buildImageResponse(Image image) {
@@ -76,6 +87,17 @@ public class HotelUtils {
                 .phone(hotelRequest.getPhone())
                 .email(hotelRequest.getEmail())
                 .policy(hotelRequest.getPolicy())
+                .rating(0.0)
+                .avatar(hotelRequest.getAvatar())
+                .longitude(hotelRequest.getLongitude())
+                .latitude(hotelRequest.getLatitude())
+                .googleMapEmbed(hotelRequest.getGoogleMapEmbed())
+                .build();
+    }
+    public static LocationResponse buildLocationResponse(Location location) {
+      return   LocationResponse.builder()
+                .id(location.getId())
+                .name(location.getName())
                 .build();
     }
 }
