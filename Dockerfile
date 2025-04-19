@@ -12,4 +12,4 @@ WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 
 EXPOSE ${SERVER_PORT}
-ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${SERVER_PORT}"] asda
+ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${SERVER_PORT}"]
