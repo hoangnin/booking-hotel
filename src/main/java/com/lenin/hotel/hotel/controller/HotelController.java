@@ -82,6 +82,11 @@ public class HotelController {
         return ResponseEntity.ok().body(rooms);
     }
 
+    @GetMapping("public/cicdtest")
+    public ResponseEntity<?> getAllRooms(){
+        return ResponseEntity.ok().body(Map.of("message", "sucesscicd"));
+    }
+
     @GetMapping("/public/hotel/{id}")
     public ResponseEntity<?> getHotel(@PathVariable Integer id) {
         HotelResponse hotelResponse = hotelService.getHotelById(id);
