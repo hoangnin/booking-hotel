@@ -36,7 +36,7 @@ jobs:
       - name: Publish to Registry
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
-          name: euznsazzad/spring-boot-ci-cd
+          name: ninxtr/hotel-ci-cd
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
