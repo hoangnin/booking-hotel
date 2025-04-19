@@ -4,9 +4,8 @@ package com.lenin.hotel.common.utils;
 
 import com.lenin.hotel.booking.model.Booking;
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-@Slf4j
+
 public class EmailTemplateUtils {
     public static String bookingSuccessEmail(Booking booking) {
         return String.format(
@@ -58,23 +57,7 @@ public class EmailTemplateUtils {
         );
     }
     public static String forgotPasswordEmail(String username, String email, String frontEndHost, String frontEndForgotPasswordPath, String token) {
-        // Log các tham số đầu vào
-        log.info("Generating forgot password email content with the following parameters:");
-        log.info("Username: {}", username);
-        log.info("Email: {}", email);
-        log.info("Frontend Host: {}", frontEndHost);
-        log.info("Forgot Password Path: {}", frontEndForgotPasswordPath);
-        log.info("Token: {}", token);
-
-        // Kiểm tra nếu có tham số null
-        if (username == null || email == null || frontEndHost == null || frontEndForgotPasswordPath == null || token == null) {
-            log.error("One or more parameters are null in forgotPasswordEmail: username={}, email={}, frontEndHost={}, frontEndForgotPasswordPath={}, token={}",
-                    username, email, frontEndHost, frontEndForgotPasswordPath, token);
-            throw new IllegalArgumentException("One or more parameters are null in forgotPasswordEmail()");
-        }
-
-        // Tạo nội dung email
-        String emailContent = String.format(
+        return String.format(
                 "Subject: 🔒 Reset Your Password - Vinova\n\n" +
                         "Hello %s,\n\n" +
                         "We received a request to reset your password for your Vinova account associated with %s.\n\n" +
@@ -87,13 +70,7 @@ public class EmailTemplateUtils {
                         "Vinova Team\n",
                 username, email, frontEndHost, frontEndForgotPasswordPath, token
         );
-
-        // Log nội dung email
-        log.info("Generated email content: \n{}", emailContent);
-
-        return emailContent;
     }
-
 
     public static String activeAccountEmail(String username, String frontEndHost, String frontEndActivationPath, String token) {
         return String.format(
