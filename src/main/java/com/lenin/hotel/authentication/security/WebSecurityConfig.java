@@ -52,7 +52,7 @@ public class WebSecurityConfig {
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/oauth2/**", "/api/public/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/api/public/**").permitAll()
                         .requestMatchers("/api/user/**").hasRole("USER")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/hotelOwner/**").hasRole("HOTEL")
