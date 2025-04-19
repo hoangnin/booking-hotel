@@ -14,6 +14,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -29,7 +30,8 @@ import java.util.Set;
 @Component
 @RequiredArgsConstructor
 public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler {
-
+    @Value("${hotel.frontEnd.host}")
+    private String frontEndHost;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
@@ -54,7 +56,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
             return userRepository.save(newUser);
         });
         if (user.getBanReason() != null && !user.getBanReason().isEmpty()){
-            String redirectUrl = "http://localhost:5173/oauth2/failed";
+            String redirectUrl = frontEndHost + "/oauth2/failed";
             response.sendRedirect(redirectUrl);
             return;
         }
@@ -89,7 +91,7 @@ public class CustomOAuth2SuccessHandler implements AuthenticationSuccessHandler 
         }
 
         // redirect hoặc trả JSON
-        String redirectUrl = "http://localhost:5173/oauth2/success" +
+        String redirectUrl = frontEndHost + "/oauth2/success" +
                 "?token=" + jwt +
                 "&refresh=" + refreshToken.getToken() +
                 "&avatar=" + URLEncoder.encode(avatarUrl == null ? "" : avatarUrl, StandardCharsets.UTF_8);
