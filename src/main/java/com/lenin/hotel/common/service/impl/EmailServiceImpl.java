@@ -85,37 +85,18 @@ public class EmailServiceImpl implements IEmailService {
 
     @Async
     public void sendMailForgotPassword(String username, String email, String tokenUrl) {
-        // Log thông tin đầu vào
-        log.info("Starting to send forgot password email to: {}", email);
-        log.info("Username: {}", username);
-        log.info("Token URL: {}", tokenUrl);
-
         try {
-            // Tạo SimpleMailMessage
             SimpleMailMessage message = new SimpleMailMessage();
             message.setSubject("Vinova - Forgot Password");
             message.setFrom(SENDER_EMAIL);
             message.setTo(email);
-
-            // Log nội dung email trước khi gửi
-            String emailContent = forgotPasswordEmail(username, email, frontEndHostValue, frontEndForgotPasswordPathValue, tokenUrl);
-            log.info("Generated email content for {}: \n{}", email, emailContent);
-
-            message.setText(emailContent);
-
-            // Gửi email
-            log.info("Sending email to: {}", email);
+            message.setText(forgotPasswordEmail(username, email, frontEndHostValue, frontEndForgotPasswordPathValue, tokenUrl));
             javaMailSender.send(message);
-
-            // Log thông báo thành công
-            log.info("Email sent successfully to: {}", email);
         } catch (Exception e) {
-            // Log lỗi chi tiết nếu gửi email thất bại
-            log.error("Error occurred while sending forgot password email to {}: {}", email, e.getMessage(), e);
-            throw new RuntimeException("Error sending forgot password email", e);
+            log.error(e.getMessage());
+            throw new RuntimeException();
         }
     }
-
     @Async
     public void sendMailActiveAccount(String username, String email, String tokenUrl) {
         try {
