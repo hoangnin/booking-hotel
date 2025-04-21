@@ -1,26 +1,29 @@
-package com.lenin.hotel;
+package com.lenin.hotel.services;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-
+import com.fasterxml.jackson.databind.JsonNode;
 import com.lenin.hotel.authentication.model.Role;
 import com.lenin.hotel.authentication.model.User;
 import com.lenin.hotel.authentication.repository.RoleRepository;
 import com.lenin.hotel.authentication.repository.UserRepository;
 import com.lenin.hotel.booking.model.Location;
 import com.lenin.hotel.common.enumuration.ERole;
+import com.lenin.hotel.common.enumuration.ImageType;
+import com.lenin.hotel.common.exception.BusinessException;
 import com.lenin.hotel.common.exception.ResourceNotFoundException;
-import com.lenin.hotel.common.service.PdfGeneratorService;
-import com.lenin.hotel.common.service.impl.EmailServiceImpl;
 import com.lenin.hotel.hotel.dto.request.ChangePriceRequest;
 import com.lenin.hotel.hotel.dto.request.HotelRequest;
 import com.lenin.hotel.hotel.dto.request.PriceTrackingRequest;
+import com.lenin.hotel.hotel.dto.response.HotelResponse;
 import com.lenin.hotel.hotel.model.Amenity;
 import com.lenin.hotel.hotel.model.Hotel;
+import com.lenin.hotel.hotel.model.Image;
 import com.lenin.hotel.hotel.model.PriceTracking;
 import com.lenin.hotel.hotel.repository.*;
 import com.lenin.hotel.hotel.service.impl.HotelServiceImpl;
+import com.stripe.model.Price;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,12 +64,6 @@ class HotelServiceTest {
 
     @InjectMocks
     private HotelServiceImpl hotelService;
-
-    @InjectMocks
-    private PdfGeneratorService pdfGeneratorService;
-    @InjectMocks
-    private EmailServiceImpl emailService;
-
     private User user;
     private Role hotelOwnerRole;
 
@@ -243,5 +240,155 @@ class HotelServiceTest {
         assertTrue(result.contains(2));
     }
 
+    @Test
+    void testRemoveFavorite() {
+        // Arrange
+        User user = new User();
+        Hotel hotel = new Hotel();
+        hotel.setId(1);
+        user.setFavoriteHotels(new HashSet<>(Set.of(hotel)));
+
+        when(userRepository.getByUsername(any())).thenReturn(Optional.of(user));
+        when(hotelRepository.findById(any())).thenReturn(Optional.of(hotel));
+
+        // Act
+        hotelService.removeFavorite(1);
+
+        // Assert
+        assertFalse(user.getFavoriteHotels().contains(hotel));
+        verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    void testGetHotelsByHotelOwnerId() {
+        // Arrange
+        User user = new User();
+        user.setId(1L);
+        Hotel hotel1 = new Hotel();
+        hotel1.setId(1);
+        Hotel hotel2 = new Hotel();
+        hotel2.setId(2);
+        when(userRepository.getByUsername(any())).thenReturn(Optional.of(user));
+        when(hotelRepository.findByOwner(user)).thenReturn(List.of(hotel1, hotel2));
+
+        // Act
+        List<Integer> result = hotelService.getHotelsByHotelOwnerId();
+
+        // Assert
+        assertEquals(2, result.size());
+        assertTrue(result.contains(1));
+        assertTrue(result.contains(2));
+    }
+
+    @Test
+    void testUpdateHotel_Success() {
+        // Arrange
+        User user = new User();
+        user.setId(1L);
+        Hotel hotel = new Hotel();
+        hotel.setId(1);
+        hotel.setOwner(user);
+
+        JsonNode hotelJson = mock(JsonNode.class);
+        when(hotelJson.has("title")).thenReturn(true);
+        when(hotelJson.get("title")).thenReturn(mock(JsonNode.class)); // Ensure non-null JsonNode
+        when(hotelJson.get("title").asText()).thenReturn("Updated Hotel Name");
+
+        when(userRepository.getByUsername(any())).thenReturn(Optional.of(user));
+        when(hotelRepository.findById(any())).thenReturn(Optional.of(hotel));
+
+        // Act
+        hotelService.updateHotel(1, hotelJson);
+
+        // Assert
+        assertEquals("Updated Hotel Name", hotel.getName());
+        verify(hotelRepository, times(1)).save(hotel);
+    }
+
+    @Test
+    void testUpdateHotel_Unauthorized() {
+        // Arrange
+        User user = new User();
+        user.setId(1L);
+        Hotel hotel = new Hotel();
+        hotel.setId(1);
+        hotel.setOwner(new User()); // Different owner
+
+        JsonNode hotelJson = mock(JsonNode.class);
+
+        when(userRepository.getByUsername(any())).thenReturn(Optional.of(user));
+        when(hotelRepository.findById(any())).thenReturn(Optional.of(hotel));
+
+        // Act & Assert
+        Exception exception = assertThrows(BusinessException.class, () -> hotelService.updateHotel(1, hotelJson));
+        assertEquals("You do not have permission to change this hotel.", exception.getMessage());
+    }
+
+    @Test
+    void testGetHotelById_Success() {
+        // Arrange
+        Hotel hotel = new Hotel();
+        hotel.setId(1);
+        hotel.setName("Test Hotel");
+        hotel.setDescription("Sample description");
+        hotel.setAddress("123 Street");
+        hotel.setPhone("123456789");
+        hotel.setEmail("hotel@example.com");
+        hotel.setPolicy("No pets");
+        hotel.setTotalReview(10);
+        hotel.setRating(4.5);
+        hotel.setLongitude(106.1234);
+        hotel.setLatitude(10.5678);
+        hotel.setGoogleMapEmbed("<iframe></iframe>");
+
+// Owner
+        User owner = new User();
+        owner.setId(1L);
+        hotel.setOwner(owner);
+
+// Amenities
+        Amenity amenity = new Amenity();
+        amenity.setId(1);
+        amenity.setName("Free Wi-Fi");
+        hotel.setAmenities(List.of(amenity));
+
+// Location
+        Location location = new Location();
+        location.setName("Ho Chi Minh City");
+        hotel.setLocation(location);
+
+// Bookings
+        hotel.setBookings(Collections.emptyList());
+
+// Images
+        List<Image> images = Collections.emptyList(); // hoặc mock List<Image>
+
+// Price
+        PriceTracking priceTracking = new PriceTracking();
+        priceTracking.setPrice(BigDecimal.valueOf(1200000));
+
+// Mock repository calls
+        when(hotelRepository.findById(1)).thenReturn(Optional.of(hotel));
+        when(priceTrackingRepository.findTopByHotelIdOrderByCreateDtDesc(1L)).thenReturn(Optional.of(priceTracking));
+        when(imageRepository.findByReferenceIdAndReferenceTableAndType(1, "hotels", ImageType.ROOM))
+                .thenReturn(images);
+
+        // Act
+        HotelResponse response = hotelService.getHotelById(1);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals("Test Hotel", response.getName());
+    }
+
+    @Test
+    void testGetHotelById_NotFound() {
+        // Arrange
+        when(hotelRepository.findById(any())).thenReturn(Optional.empty());
+
+        // Act & Assert
+        Exception exception = assertThrows(BusinessException.class, () -> hotelService.getHotelById(1));
+        assertEquals("Hotel id not found", exception.getMessage());
+    }
 
 }

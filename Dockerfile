@@ -3,7 +3,7 @@ FROM openjdk:21-jdk AS builder
 
 WORKDIR /app
 COPY . .
-RUN ./mvnw clean package -DskipTests
+RUN ./mvnw clean package
 
 # Giai đoạn 2: Chạy ứng dụng
 FROM openjdk:21-jdk

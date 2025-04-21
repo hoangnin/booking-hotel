@@ -123,7 +123,9 @@ public class HotelServiceImpl implements IHotelService {
                 .toList();
     }
     public HotelResponse convertToHotelResponse(Hotel hotel) {
-        List<BookedDateRange> bookedDateRanges = hotel.getBookings().stream()
+        List<BookedDateRange> bookedDateRanges = Optional.ofNullable(hotel.getBookings())
+                .orElse(Collections.emptyList()) // Handle null bookings
+                .stream()
                 .map(booking -> BookedDateRange.builder()
                         .checkIn(booking.getCheckIn())
                         .checkOut(booking.getCheckOut())
@@ -135,16 +137,13 @@ public class HotelServiceImpl implements IHotelService {
 
         PriceTracking priceTracking = getLatestPrice(Long.valueOf(hotel.getId()));
 
-        if (priceTracking == null) {
-            return null;
-        }
 
         return HotelUtils.buildHotelResponse(hotel, images, priceTracking.getPrice(), bookedDateRanges);
     }
 
     public PriceTracking getLatestPrice(Long hotelId) {
         return priceTrackingRepository.findTopByHotelIdOrderByCreateDtDesc(hotelId)
-                .orElseThrow(() -> new RuntimeException("Not found price for hotelId: " + hotelId));
+                .orElseThrow(() -> new ResourceNotFoundException("Not found price for hotelId: " + hotelId));
     }
 
     @Override
@@ -563,3 +562,4 @@ public class HotelServiceImpl implements IHotelService {
     }
 
 }
+
