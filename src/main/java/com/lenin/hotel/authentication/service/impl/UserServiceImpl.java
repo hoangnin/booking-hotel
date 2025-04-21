@@ -160,8 +160,12 @@ public class UserServiceImpl implements IUserService {
     public Map<String, String> forgotPassword(String email) {
         if (userRepository.existsByEmail(email)) {
             User user = userRepository.findByEmail(email);
-            if (user.getBanUntil()!=null && user.getBanUntil().isBefore(ZonedDateTime.now()))
+            if (user == null) {
+                return Map.of("message", "If your email exist in our system, then you will receive instructions on resetting your password.");
+            }
+            if (user.getBanUntil() != null && user.getBanUntil().isAfter(ZonedDateTime.now())) {
                 throw new BusinessException("Your account has been banned until " + formatter.format(user.getBanUntil()));
+            }
             IEmailService.sendMailForgotPassword(user.getUsername(), user.getEmail(), jwtUtil.generateToken(email));
         }
         return Map.of("message", "If your email exist in our system, then you will receive instructions on resetting your password.");

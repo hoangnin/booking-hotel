@@ -1,12 +1,10 @@
 package com.lenin.hotel.hotel.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.lenin.hotel.booking.enumuration.BookingStatus;
-import com.lenin.hotel.hotel.model.PriceTracking;
+import com.lenin.hotel.common.enumuration.BookingStatus;
 import lombok.Builder;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 @Data

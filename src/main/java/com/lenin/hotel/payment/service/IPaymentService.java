@@ -1,6 +1,6 @@
 package com.lenin.hotel.payment.service;
 
-import com.lenin.hotel.booking.model.Booking;
+import com.lenin.hotel.hotel.model.Booking;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface IPaymentService {

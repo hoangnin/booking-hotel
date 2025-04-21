@@ -1,6 +1,6 @@
 package com.lenin.hotel.hotel.utils;
 
-import com.lenin.hotel.booking.model.Location;
+import com.lenin.hotel.hotel.model.Location;
 import com.lenin.hotel.hotel.dto.response.*;
 import com.lenin.hotel.hotel.model.*;
 import com.lenin.hotel.hotel.dto.request.HotelRequest;

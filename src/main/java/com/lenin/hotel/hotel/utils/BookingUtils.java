@@ -1,7 +1,7 @@
 package com.lenin.hotel.hotel.utils;
 
-import com.lenin.hotel.booking.enumuration.BookingStatus;
-import com.lenin.hotel.booking.model.Booking;
+import com.lenin.hotel.common.enumuration.BookingStatus;
+import com.lenin.hotel.hotel.model.Booking;
 import com.lenin.hotel.common.exception.BusinessException;
 import com.lenin.hotel.hotel.dto.request.BookingRequest;
 import com.lenin.hotel.hotel.dto.response.BookingResponse;

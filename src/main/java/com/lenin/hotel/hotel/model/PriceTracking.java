@@ -1,6 +1,5 @@
 package com.lenin.hotel.hotel.model;
 
-import com.lenin.hotel.booking.model.Booking;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

@@ -8,10 +8,16 @@ public class StripeException extends RuntimeException {
     public StripeException(String message) {
         super(message);
     }
+    public StripeException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
     public static class InvalidSignatureException extends StripeException {
         public InvalidSignatureException(String message) {
             super(message);
+        }
+        public InvalidSignatureException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

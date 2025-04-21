@@ -1,7 +1,7 @@
 package com.lenin.hotel.common.service;
 
 
-import com.lenin.hotel.booking.model.Booking;
+import com.lenin.hotel.hotel.model.Booking;
 
 public interface IEmailService {
     public void sendEmailWithPdf(String to, String subject, String text, byte[] pdfData, String fileName);

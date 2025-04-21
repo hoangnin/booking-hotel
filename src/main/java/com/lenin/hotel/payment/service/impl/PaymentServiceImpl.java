@@ -1,13 +1,13 @@
 package com.lenin.hotel.payment.service.impl;
 
-import com.lenin.hotel.booking.enumuration.BookingStatus;
+import com.lenin.hotel.common.enumuration.BookingStatus;
 import com.lenin.hotel.common.exception.StripeException.*;
 import com.lenin.hotel.hotel.repository.BookingRepository;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.net.Webhook;
 import jakarta.servlet.http.HttpServletRequest;
-import com.lenin.hotel.booking.model.Booking;
+import com.lenin.hotel.hotel.model.Booking;
 import com.lenin.hotel.common.exception.BusinessException;
 import com.lenin.hotel.payment.dto.request.ChargeRequest;
 import com.lenin.hotel.payment.service.IPaymentService;
@@ -20,10 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 
 import static com.lenin.hotel.hotel.utils.BookingUtils.calculateTotalBill;
 
@@ -52,9 +49,14 @@ public class PaymentServiceImpl implements IPaymentService {
             throw new InvalidSignatureException("Missing Stripe-Signature header");
         }
 
-        Event event = verifyStripeSignature(payload, sigHeader);
+        Event event = null;
+        try {
+            event = verifyStripeSignature(payload, sigHeader);
+        } catch (InvalidSignatureException e) {
+            throw e;
+        }
 
-        if ("checkout.session.completed".equals(event.getType()) && !handleCheckoutSessionCompleted(event)) {
+        if (event != null && "checkout.session.completed".equals(event.getType()) && !handleCheckoutSessionCompleted(event)) {
             throw new OrderUpdateFailedException("Failed to update order");
         }
     }
@@ -71,7 +73,7 @@ public class PaymentServiceImpl implements IPaymentService {
         try {
             return Webhook.constructEvent(payload, sigHeader, stripeSigningKey);
         } catch (SignatureVerificationException e) {
-            throw new InvalidSignatureException("Invalid Stripe signature");
+            throw new InvalidSignatureException("Invalid Stripe signature", e);
         }
     }
 

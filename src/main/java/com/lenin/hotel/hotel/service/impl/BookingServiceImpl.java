@@ -2,8 +2,9 @@ package com.lenin.hotel.hotel.service.impl;
 
 import com.lenin.hotel.authentication.model.User;
 import com.lenin.hotel.authentication.repository.UserRepository;
-import com.lenin.hotel.booking.model.Booking;
+import com.lenin.hotel.hotel.model.Booking;
 import com.lenin.hotel.common.PagedResponse;
+import com.lenin.hotel.common.exception.BusinessException;
 import com.lenin.hotel.common.service.IEmailService;
 import com.lenin.hotel.common.exception.ResourceNotFoundException;
 import com.lenin.hotel.hotel.model.Hotel;
@@ -73,7 +74,7 @@ public class BookingServiceImpl implements IBookingService {
 
     @Override
     public PagedResponse<BookingResponse> getBookingByUser(int page, int size) {
-        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -> new BusinessException("User not found"));
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createDt"));
         Page<Booking> bookingPage = bookingRepository.findAllByUser(user, pageable);
         return new PagedResponse<>(

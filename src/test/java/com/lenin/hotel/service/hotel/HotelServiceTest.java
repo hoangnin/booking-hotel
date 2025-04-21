@@ -1,4 +1,4 @@
-package com.lenin.hotel.services;
+package com.lenin.hotel.service.hotel;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -8,7 +8,7 @@ import com.lenin.hotel.authentication.model.Role;
 import com.lenin.hotel.authentication.model.User;
 import com.lenin.hotel.authentication.repository.RoleRepository;
 import com.lenin.hotel.authentication.repository.UserRepository;
-import com.lenin.hotel.booking.model.Location;
+import com.lenin.hotel.hotel.model.Location;
 import com.lenin.hotel.common.enumuration.ERole;
 import com.lenin.hotel.common.enumuration.ImageType;
 import com.lenin.hotel.common.exception.BusinessException;
@@ -23,7 +23,6 @@ import com.lenin.hotel.hotel.model.Image;
 import com.lenin.hotel.hotel.model.PriceTracking;
 import com.lenin.hotel.hotel.repository.*;
 import com.lenin.hotel.hotel.service.impl.HotelServiceImpl;
-import com.stripe.model.Price;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

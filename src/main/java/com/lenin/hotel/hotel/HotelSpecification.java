@@ -1,13 +1,12 @@
 package com.lenin.hotel.hotel;
 
-import com.lenin.hotel.booking.model.Booking;
-import com.lenin.hotel.booking.model.Location;
+import com.lenin.hotel.hotel.model.Booking;
+import com.lenin.hotel.hotel.model.Location;
 import com.lenin.hotel.hotel.model.Hotel;
 import com.lenin.hotel.hotel.model.PriceTracking;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;

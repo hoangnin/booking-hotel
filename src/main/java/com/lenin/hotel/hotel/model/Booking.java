@@ -1,16 +1,13 @@
-package com.lenin.hotel.booking.model;
+package com.lenin.hotel.hotel.model;
 
 import com.lenin.hotel.authentication.model.User;
-import com.lenin.hotel.booking.enumuration.BookingStatus;
-import com.lenin.hotel.hotel.model.Hotel;
-import com.lenin.hotel.hotel.model.PriceTracking;
+import com.lenin.hotel.common.enumuration.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.ZonedDateTime;
-import java.util.Date;
 
 @Entity
 @Getter

@@ -10,7 +10,7 @@ import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.UnitValue;
 import com.lenin.hotel.hotel.model.Hotel;
-import com.lenin.hotel.booking.model.Booking;
+import com.lenin.hotel.hotel.model.Booking;
 import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;

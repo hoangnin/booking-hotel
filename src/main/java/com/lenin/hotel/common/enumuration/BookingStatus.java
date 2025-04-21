@@ -1,4 +1,4 @@
-package com.lenin.hotel.booking.enumuration;
+package com.lenin.hotel.common.enumuration;
 
 public enum BookingStatus {
     PENDING,

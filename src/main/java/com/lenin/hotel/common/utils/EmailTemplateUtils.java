@@ -2,9 +2,7 @@ package com.lenin.hotel.common.utils;
 
 
 
-import com.lenin.hotel.booking.model.Booking;
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
+import com.lenin.hotel.hotel.model.Booking;
 
 public class EmailTemplateUtils {
     public static String bookingSuccessEmail(Booking booking) {

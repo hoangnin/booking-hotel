@@ -1,8 +1,8 @@
 package com.lenin.hotel.hotel.repository;
 
 import com.lenin.hotel.authentication.model.User;
-import com.lenin.hotel.booking.enumuration.BookingStatus;
-import com.lenin.hotel.booking.model.Booking;
+import com.lenin.hotel.common.enumuration.BookingStatus;
+import com.lenin.hotel.hotel.model.Booking;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

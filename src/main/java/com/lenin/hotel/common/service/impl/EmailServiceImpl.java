@@ -1,6 +1,6 @@
 package com.lenin.hotel.common.service.impl;
 
-import com.lenin.hotel.booking.model.Booking;
+import com.lenin.hotel.hotel.model.Booking;
 import com.lenin.hotel.common.service.IEmailService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
