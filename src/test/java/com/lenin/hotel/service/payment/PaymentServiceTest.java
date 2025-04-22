@@ -76,7 +76,6 @@ class PaymentServiceTest {
         }
     }
 
-
     @Test
     void testCreatePayment_StripeException() {
         Booking booking = new Booking();
@@ -95,7 +94,6 @@ class PaymentServiceTest {
             assertThrows(BusinessException.class, () -> paymentService.createPayment(booking));
         }
     }
-
 
     @Test
     void testProcessStripeWebhook_Success() throws IOException {
@@ -155,6 +153,7 @@ class PaymentServiceTest {
             verify(bookingRepository, times(1)).save(booking);
         }
     }
+
 
     @Test
     void testProcessStripeWebhook_InvalidSignature() throws IOException {
