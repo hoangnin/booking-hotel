@@ -17,6 +17,8 @@ import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
@@ -29,14 +31,14 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.lenin.hotel.hotel.utils.BookingUtils.calculateTotalBill;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@Execution(ExecutionMode.SAME_THREAD)
 class PaymentServiceTest {
 
     private PaymentServiceImpl paymentService;
-
 
     @Mock
     private BookingRepository bookingRepository;
@@ -120,7 +122,6 @@ class PaymentServiceTest {
 
             @Override
             public void setReadListener(jakarta.servlet.ReadListener readListener) {
-                // No implementation needed for this test
             }
         });
         when(request.getHeader("Stripe-Signature")).thenReturn(sigHeader);
@@ -128,16 +129,13 @@ class PaymentServiceTest {
         Event event = mock(Event.class);
         when(event.getType()).thenReturn("checkout.session.completed");
 
-        // Mock the EventDataObjectDeserializer and ensure it returns a mock Session.
-        com.stripe.model.EventDataObjectDeserializer deserializer =
-                mock(com.stripe.model.EventDataObjectDeserializer.class);
+        var deserializer = mock(com.stripe.model.EventDataObjectDeserializer.class);
         Session session = mock(Session.class);
-        // Set metadata containing the order_id
         when(session.getMetadata()).thenReturn(Map.of("order_id", "1"));
         when(deserializer.getObject()).thenReturn(Optional.of(session));
         when(event.getDataObjectDeserializer()).thenReturn(deserializer);
 
-        try (var mockedStatic = mockStatic(Webhook.class)) {
+        try (MockedStatic<Webhook> mockedStatic = mockStatic(Webhook.class)) {
             mockedStatic.when(() -> Webhook.constructEvent(payload, sigHeader, "stripe-signing-key"))
                     .thenReturn(event);
 
@@ -153,7 +151,6 @@ class PaymentServiceTest {
             verify(bookingRepository, times(1)).save(booking);
         }
     }
-
 
     @Test
     void testProcessStripeWebhook_InvalidSignature() throws IOException {
@@ -180,12 +177,11 @@ class PaymentServiceTest {
 
             @Override
             public void setReadListener(jakarta.servlet.ReadListener readListener) {
-                // No implementation needed for this test
             }
         });
         when(request.getHeader("Stripe-Signature")).thenReturn(sigHeader);
 
-        try (var mockedStatic = mockStatic(Webhook.class)) {
+        try (MockedStatic<Webhook> mockedStatic = mockStatic(Webhook.class)) {
             mockedStatic.when(() -> Webhook.constructEvent(payload, sigHeader, "stripe-signing-key"))
                     .thenThrow(new SignatureVerificationException("Invalid signature", null));
 
