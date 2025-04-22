@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -55,46 +56,46 @@ class PaymentServiceTest {
         Booking booking = new Booking();
         booking.setId(1);
         booking.setCheckIn(ZonedDateTime.now());
-        booking.setCheckOut(ZonedDateTime.now().plusDays(2)); // Ensure checkOut is after checkIn
+        booking.setCheckOut(ZonedDateTime.now().plusDays(2));
 
-        // Initialize PriceTracking and set a price
         PriceTracking priceTracking = new PriceTracking();
-        priceTracking.setPrice(BigDecimal.valueOf(100)); // Set a valid price
+        priceTracking.setPrice(BigDecimal.valueOf(100));
         booking.setPriceTracking(priceTracking);
 
         String expectedUrl = "https://example.com/payment/session";
-        Session session = mock(Session.class);
-        when(session.getUrl()).thenReturn(expectedUrl);
 
-        try (var mockedStatic = mockStatic(Session.class)) {
-            mockedStatic.when(() -> Session.create(any(SessionCreateParams.class))).thenReturn(session);
+        try (MockedStatic<Session> mockedStatic = mockStatic(Session.class)) {
+            Session session = mock(Session.class);
+            when(session.getUrl()).thenReturn(expectedUrl);
 
-            String paymentUrl = paymentService.createPayment(booking);
+            mockedStatic.when(() -> Session.create(any(SessionCreateParams.class)))
+                    .thenReturn(session);
 
-            assertEquals(expectedUrl, paymentUrl);
-        } catch (Exception e) {
-            fail("Exception should not be thrown");
+            String actualUrl = paymentService.createPayment(booking);
+            assertEquals(expectedUrl, actualUrl);
         }
     }
+
 
     @Test
     void testCreatePayment_StripeException() {
         Booking booking = new Booking();
         booking.setId(1);
         booking.setCheckIn(ZonedDateTime.now());
-        booking.setCheckOut(ZonedDateTime.now().plusDays(2)); // Ensure checkOut is after checkIn
+        booking.setCheckOut(ZonedDateTime.now().plusDays(2));
 
-        // Initialize PriceTracking and set a price
         PriceTracking priceTracking = new PriceTracking();
-        priceTracking.setPrice(BigDecimal.valueOf(100)); // Set a valid price
+        priceTracking.setPrice(BigDecimal.valueOf(100));
         booking.setPriceTracking(priceTracking);
 
-        try (var mockedStatic = mockStatic(Session.class)) {
-            mockedStatic.when(() -> Session.create(any(SessionCreateParams.class))).thenThrow(new BusinessException("Stripe error"));
+        try (MockedStatic<Session> mockedStatic = mockStatic(Session.class)) {
+            mockedStatic.when(() -> Session.create(any(SessionCreateParams.class)))
+                    .thenThrow(new BusinessException("Stripe error"));
 
             assertThrows(BusinessException.class, () -> paymentService.createPayment(booking));
         }
     }
+
 
     @Test
     void testProcessStripeWebhook_Success() throws IOException {
