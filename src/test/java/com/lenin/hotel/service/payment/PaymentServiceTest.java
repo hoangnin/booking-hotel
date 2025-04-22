@@ -17,8 +17,6 @@ import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
@@ -35,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@Execution(ExecutionMode.SAME_THREAD)
 class PaymentServiceTest {
 
     private PaymentServiceImpl paymentService;
@@ -104,25 +101,10 @@ class PaymentServiceTest {
 
         when(request.getInputStream()).thenReturn(new ServletInputStream() {
             private final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(payload.getBytes());
-
-            @Override
-            public int read() throws IOException {
-                return byteArrayInputStream.read();
-            }
-
-            @Override
-            public boolean isFinished() {
-                return byteArrayInputStream.available() == 0;
-            }
-
-            @Override
-            public boolean isReady() {
-                return true;
-            }
-
-            @Override
-            public void setReadListener(jakarta.servlet.ReadListener readListener) {
-            }
+            @Override public int read() throws IOException { return byteArrayInputStream.read(); }
+            @Override public boolean isFinished() { return byteArrayInputStream.available() == 0; }
+            @Override public boolean isReady() { return true; }
+            @Override public void setReadListener(jakarta.servlet.ReadListener readListener) { }
         });
         when(request.getHeader("Stripe-Signature")).thenReturn(sigHeader);
 
@@ -159,25 +141,10 @@ class PaymentServiceTest {
 
         when(request.getInputStream()).thenReturn(new ServletInputStream() {
             private final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(payload.getBytes());
-
-            @Override
-            public int read() throws IOException {
-                return byteArrayInputStream.read();
-            }
-
-            @Override
-            public boolean isFinished() {
-                return byteArrayInputStream.available() == 0;
-            }
-
-            @Override
-            public boolean isReady() {
-                return true;
-            }
-
-            @Override
-            public void setReadListener(jakarta.servlet.ReadListener readListener) {
-            }
+            @Override public int read() throws IOException { return byteArrayInputStream.read(); }
+            @Override public boolean isFinished() { return byteArrayInputStream.available() == 0; }
+            @Override public boolean isReady() { return true; }
+            @Override public void setReadListener(jakarta.servlet.ReadListener readListener) { }
         });
         when(request.getHeader("Stripe-Signature")).thenReturn(sigHeader);
 
