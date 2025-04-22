@@ -174,10 +174,6 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.2.5</version>
-				<configuration>
-					<forkCount>1</forkCount>
-					<parallel>none</parallel>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
