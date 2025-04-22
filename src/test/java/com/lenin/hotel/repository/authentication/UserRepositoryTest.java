@@ -5,11 +5,16 @@ import com.lenin.hotel.authentication.model.User;
 import com.lenin.hotel.authentication.repository.RoleRepository;
 import com.lenin.hotel.authentication.repository.UserRepository;
 import com.lenin.hotel.common.enumuration.ERole;
+import com.lenin.hotel.configuration.DatabaseTestContainer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Rollback
+@Import(DatabaseTestContainer.class)
 public class UserRepositoryTest {
 
     @Autowired
@@ -27,6 +33,16 @@ public class UserRepositoryTest {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private PostgreSQLContainer<?> postgreSQLContainer;
+
+    @DynamicPropertySource
+    static void properties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", () -> DatabaseTestContainer.postgresqlContainer().getJdbcUrl());
+        registry.add("spring.datasource.username", () -> DatabaseTestContainer.postgresqlContainer().getUsername());
+        registry.add("spring.datasource.password", () -> DatabaseTestContainer.postgresqlContainer().getPassword());
+    }
 
     @Test
     public void testFindByUsername() {

@@ -17,7 +17,7 @@ public class DatabaseTestContainer {
     }
 
     @Bean
-    public PostgreSQLContainer<?> postgresqlContainer() {
+    public static PostgreSQLContainer<?> postgresqlContainer() {
         return postgresContainer;
     }
 }
