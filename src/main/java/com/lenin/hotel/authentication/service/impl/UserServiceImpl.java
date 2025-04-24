@@ -60,7 +60,7 @@ public class UserServiceImpl implements IUserService {
 
     public Map<String, String> signup(SignupRequest signupRequest) {
         if (userRepository.existsByUsername(signupRequest.getUsername())) {
-            throw new ResourceNotFoundException("Username is already taken!");
+            throw new BusinessException("Username is already taken!");
         }
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
             throw new BusinessException("Email is already in use!");

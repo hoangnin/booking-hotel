@@ -12,6 +12,7 @@ import com.lenin.hotel.authentication.security.UserDetailsImpl;
 import com.lenin.hotel.authentication.service.impl.UserServiceImpl;
 import com.lenin.hotel.common.enumuration.ERole;
 import com.lenin.hotel.common.enumuration.ImageType;
+import com.lenin.hotel.common.exception.BusinessException;
 import com.lenin.hotel.common.exception.ResourceNotFoundException;
 import com.lenin.hotel.common.service.IEmailService;
 import com.lenin.hotel.hotel.repository.ImageRepository;
@@ -142,7 +143,7 @@ class UserServiceTest {
         when(userRepository.existsByUsername(signupRequest.getUsername())).thenReturn(true);
 
         // Act & Assert
-        assertThrows(ResourceNotFoundException.class, () -> userService.signup(signupRequest));
+        assertThrows(BusinessException.class, () -> userService.signup(signupRequest));
     }
 
     @Test

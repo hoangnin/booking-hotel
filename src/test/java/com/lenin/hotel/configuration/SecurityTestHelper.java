@@ -34,6 +34,9 @@ public class SecurityTestHelper {
         this.passwordEncoder = passwordEncoder;
         this.restTemplate = restTemplate;
     }
+    public String getTestUsername(){
+        return "admin";
+    }
 
     public String getAuthHeader() {
         // Create roles if they do not exist.
