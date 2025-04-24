@@ -23,5 +23,6 @@ public class PriceTrackingRequest {
     @NotNull(message = "Price is required")
     @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     @Digits(integer = 10, fraction = 2, message = "Invalid price format")
+    @Positive(message = "Price must be a positive value")
     private BigDecimal price;
 }

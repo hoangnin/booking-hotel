@@ -1,12 +1,14 @@
 package com.lenin.hotel.hotel.dto.request;
 
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
 import java.util.Set;
 
 @Data
+@Builder
 public class HotelRequest {
 
     @NotBlank(message = "Hotel name cannot be blank")
