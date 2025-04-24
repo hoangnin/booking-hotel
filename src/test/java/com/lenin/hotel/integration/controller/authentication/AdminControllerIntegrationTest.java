@@ -36,11 +36,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 @Import({DatabaseTestContainer.class, SecurityTestConfig.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@TestPropertySource(properties = {
-        "STRIPE_PUBLIC_KEY=pk_test_dummy",
-        "STRIPE_SECRET_KEY=sk_test_dummy",
-        "STRIPE_SIGNING_KEY=whsec_dummy"
-})
 public class AdminControllerIntegrationTest extends TestDynamicProperties {
 
     @Autowired
@@ -63,12 +58,18 @@ public class AdminControllerIntegrationTest extends TestDynamicProperties {
 
     @BeforeEach
     public void setup() {
-        // Clean up database in correct order to avoid foreign key violations
-        jdbcTemplate.execute("DELETE FROM hotel_amenity");
-        jdbcTemplate.execute("DELETE FROM hotels");
-        jdbcTemplate.execute("DELETE FROM user_role WHERE user_id != (SELECT id FROM users WHERE username = 'admin')");
-        jdbcTemplate.execute("DELETE FROM users WHERE username != 'admin'");
+        try {
+            // Clean up database in correct order to respect foreign key constraints
+            jdbcTemplate.execute("DELETE FROM price_tracking");  // Delete from dependent table first
+            jdbcTemplate.execute("DELETE FROM hotel_amenity");
+            jdbcTemplate.execute("DELETE FROM hotels");          // Now it's safe to delete from hotels
+            jdbcTemplate.execute("DELETE FROM user_role WHERE user_id != (SELECT id FROM users WHERE username = 'admin')");
+            jdbcTemplate.execute("DELETE FROM users WHERE username != 'admin'");
+        } catch (Exception e) {
+            System.err.println("Database cleanup error: " + e.getMessage());
+        }
 
+        // Rest of your setup code remains the same
         // Get admin authentication header
         adminAuthHeader = securityTestHelper.getAuthHeader();
 
