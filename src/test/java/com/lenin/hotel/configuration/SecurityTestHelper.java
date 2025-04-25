@@ -11,6 +11,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+@ActiveProfiles("test")
 public class SecurityTestHelper {
 
     private final UserRepository userRepository;
@@ -38,7 +40,7 @@ public class SecurityTestHelper {
         return "admin";
     }
 
-    public String getAuthHeader() {
+   public String getAuthHeader() {
         // Create roles if they do not exist.
         ERole[] roleEnums = {ERole.ROLE_USER, ERole.ROLE_HOTEL, ERole.ROLE_ADMIN};
         for (ERole roleEnum : roleEnums) {
@@ -70,7 +72,15 @@ public class SecurityTestHelper {
         Map<String, String> loginRequest = new HashMap<>();
         loginRequest.put("username", username);
         loginRequest.put("password", rawPassword);
-        ResponseEntity<Map> loginResponse = restTemplate.postForEntity("/api/auth/signin", loginRequest, Map.class);
+
+        // Add these lines to set content type
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(loginRequest, headers);
+
+        // Use the request entity with headers
+        ResponseEntity<Map> loginResponse = restTemplate.postForEntity("/api/auth/signin", request, Map.class);
+
         if (loginResponse.getStatusCode() == HttpStatus.OK) {
             Map<?, ?> body = loginResponse.getBody();
             String token = (String) body.get("token");
