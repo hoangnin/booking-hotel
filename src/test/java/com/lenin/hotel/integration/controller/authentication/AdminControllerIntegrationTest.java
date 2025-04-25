@@ -25,10 +25,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -60,23 +57,24 @@ public class AdminControllerIntegrationTest extends TestDynamicProperties {
     public void setup() {
         try {
             // Clean up database in correct order to respect foreign key constraints
-            jdbcTemplate.execute("DELETE FROM price_tracking");  // Delete from dependent table first
+            jdbcTemplate.execute("DELETE FROM price_tracking");
             jdbcTemplate.execute("DELETE FROM hotel_amenity");
-            jdbcTemplate.execute("DELETE FROM hotels");          // Now it's safe to delete from hotels
+            jdbcTemplate.execute("DELETE FROM hotels");
             jdbcTemplate.execute("DELETE FROM user_role WHERE user_id != (SELECT id FROM users WHERE username = 'admin')");
             jdbcTemplate.execute("DELETE FROM users WHERE username != 'admin'");
         } catch (Exception e) {
             System.err.println("Database cleanup error: " + e.getMessage());
         }
 
-        // Rest of your setup code remains the same
         // Get admin authentication header
         adminAuthHeader = securityTestHelper.getAuthHeader();
 
-        // Create test user
+        // Create test user with unique identifiers
+        String uniqueSuffix = UUID.randomUUID().toString().substring(0, 8);
+
         testUser = new User();
-        testUser.setUsername("testuser");
-        testUser.setEmail("testuser@example.com");
+        testUser.setUsername("testuser_" + uniqueSuffix);
+        testUser.setEmail("testuser_" + uniqueSuffix + "@example.com");
         testUser.setPassword("password123");
         testUser.setPhoneNumber("1234567890");
         testUser.setAddress("123 Test Street");

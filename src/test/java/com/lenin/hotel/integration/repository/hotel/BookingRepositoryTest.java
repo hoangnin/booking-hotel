@@ -24,6 +24,7 @@ package com.lenin.hotel.integration.repository.hotel;
     import java.time.ZonedDateTime;
     import java.util.List;
     import java.util.Optional;
+    import java.util.UUID;
 
     import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,9 +53,10 @@ package com.lenin.hotel.integration.repository.hotel;
             bookingRepository.deleteAll();
             entityManager.flush();
 
+            String uniqueSuffix = UUID.randomUUID().toString().substring(0, 8);
             user = new User();
-            user.setUsername("testuser");
-            user.setEmail("test@example.com");
+            user.setUsername("testuser_" + uniqueSuffix);
+            user.setEmail("testuser_" + uniqueSuffix + "@example.com");
             user.setPassword("password123");
             user = entityManager.persistAndFlush(user);
 

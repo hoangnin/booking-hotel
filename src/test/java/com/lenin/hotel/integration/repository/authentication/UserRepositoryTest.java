@@ -44,17 +44,47 @@ public class UserRepositoryTest extends TestDynamicProperties {
 
     @BeforeEach
     public void setup() {
+        // Execute each statement in separate transactions to prevent cascading failures
         try {
-            // Clear tables in correct order - respecting foreign key constraints
-            jdbcTemplate.execute("DELETE FROM price_tracking"); // Add this line first
-            jdbcTemplate.execute("DELETE FROM hotel_amenity");
-            jdbcTemplate.execute("DELETE FROM refresh_token");
-            jdbcTemplate.execute("DELETE FROM hotels");
-            jdbcTemplate.execute("DELETE FROM user_role");
-            jdbcTemplate.execute("DELETE FROM users");
-            jdbcTemplate.execute("DELETE FROM roles");
+            jdbcTemplate.execute("TRUNCATE TABLE price_tracking CASCADE");
         } catch (Exception e) {
-            System.err.println("Database cleanup error: " + e.getMessage());
+            System.err.println("Error clearing price_tracking: " + e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("TRUNCATE TABLE hotel_amenity CASCADE");
+        } catch (Exception e) {
+            System.err.println("Error clearing hotel_amenity: " + e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("TRUNCATE TABLE refresh_token CASCADE");
+        } catch (Exception e) {
+            System.err.println("Error clearing refresh_token: " + e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("TRUNCATE TABLE hotels CASCADE");
+        } catch (Exception e) {
+            System.err.println("Error clearing hotels: " + e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("TRUNCATE TABLE user_role CASCADE");
+        } catch (Exception e) {
+            System.err.println("Error clearing user_role: " + e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("TRUNCATE TABLE users CASCADE");
+        } catch (Exception e) {
+            System.err.println("Error clearing users: " + e.getMessage());
+        }
+
+        try {
+            jdbcTemplate.execute("TRUNCATE TABLE roles CASCADE");
+        } catch (Exception e) {
+            System.err.println("Error clearing roles: " + e.getMessage());
         }
     }
 
