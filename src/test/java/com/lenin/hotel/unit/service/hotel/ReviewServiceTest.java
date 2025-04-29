@@ -82,6 +82,7 @@ public class ReviewServiceTest {
         reviewRequest = ReviewRequest.builder()
                 .hotelId(1)
                 .rating(5)
+                .imageUrl("imageUrl")
                 .content("Great hotel!")
                 .build();
     }
@@ -89,9 +90,20 @@ public class ReviewServiceTest {
     @Test
     void testCreateReview_Success() {
         // Arrange
+        // Create a Review that should be returned by the mock repository
+        Review savedReview = Review.builder()
+                .id(1) // Important: provide an ID
+                .rating(reviewRequest.getRating())
+                .content(reviewRequest.getContent())
+                .user(user)
+                .hotel(hotel)
+                .build();
+
         when(userRepository.getByUsername(anyString())).thenReturn(Optional.of(user));
         when(bookingRepository.existsByUserAndHotelId(user, reviewRequest.getHotelId())).thenReturn(true);
         when(hotelRepository.getReferenceById(reviewRequest.getHotelId())).thenReturn(hotel);
+        // Mock the save method to return our prepared review
+        when(reviewRepository.save(any(Review.class))).thenReturn(savedReview);
 
         // Act
         reviewService.createReview(reviewRequest);
