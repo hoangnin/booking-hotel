@@ -43,7 +43,7 @@ public class ReviewServiceImpl implements IReviewService {
         this.imageRepository = imageRepository;
     }
 
-    @Override
+   @Override
     public void createReview(ReviewRequest request) {
         User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(
                 () -> new ResourceNotFoundException("User not found!"));
@@ -66,13 +66,17 @@ public class ReviewServiceImpl implements IReviewService {
         Image newImage = buildImage(imageRequest, review.getId().intValue(), "reviews");
         imageRepository.save(newImage);
 
-        int totalReviews = hotel.getTotalReview();
-        double newRating = (hotel.getRating() * totalReviews + request.getRating()) / (totalReviews + 1); // Tính trung bình mới
+        // Handle null values for totalReview and rating
+        Integer totalReviewObj = hotel.getTotalReview();
+        int totalReviews = totalReviewObj != null ? totalReviewObj : 0;
+
+        Double ratingObj = hotel.getRating();
+        double currentRating = ratingObj != null ? ratingObj : 0.0;
+
+        double newRating = (currentRating * totalReviews + request.getRating()) / (totalReviews + 1);
         hotel.setRating(newRating);
         hotel.setTotalReview(totalReviews + 1);
         hotelRepository.save(hotel);
-
-
     }
 
     @Override
