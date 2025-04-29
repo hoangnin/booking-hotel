@@ -9,5 +9,6 @@ public class ReviewResponse {
     private int id;
     private int rating;
     private String content;
+    private String url;
     private UserReviewResponse userReview;
 }
