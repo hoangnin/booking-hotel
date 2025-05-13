@@ -40,8 +40,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build with Maven (Run Tests)
-        run: mvn clean install --no-transfer-progress
+      - name: Run tests with coverage
+        run: mvn clean verify --no-transfer-progress
+
+      - name: Upload JaCoCo Report as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco
 
       - name: Publish to Registry
         uses: elgohr/Publish-Docker-Github-Action@v5
