@@ -61,9 +61,10 @@ jobs:
           name: jacoco-report
           path: target/site/jacoco
       - name: Output coverage report URL
-        run:
-          echo "✅ JaCoCo Report available at: https://hoangnin.github.io/booking-hotel/jacoco/index.html"
-
+        run: |
+          echo "✅ JaCoCo Report available at:"
+          echo "https://hoangnin.github.io/booking-hotel/jacoco/index.html"
+      
 
       - name: Publish to Registry
         uses: elgohr/Publish-Docker-Github-Action@v5
