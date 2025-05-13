@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.authentication.service.impl</a> &gt; <span class="el_source">UserServiceImpl.java</span></div><h1>UserServiceImpl.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.authentication.service.impl;
+
+import com.lenin.hotel.authentication.dto.request.*;
+import com.lenin.hotel.authentication.model.RefreshToken;
+import com.lenin.hotel.authentication.model.Role;
+import com.lenin.hotel.authentication.model.User;
+import com.lenin.hotel.authentication.repository.RoleRepository;
+import com.lenin.hotel.authentication.repository.UserRepository;
+import com.lenin.hotel.authentication.dto.response.JwtResponse;
+import com.lenin.hotel.authentication.security.JwtUtil;
+import com.lenin.hotel.authentication.security.UserDetailsImpl;
+import com.lenin.hotel.authentication.service.IUserService;
+import com.lenin.hotel.authentication.security.RefreshTokenService;
+import com.lenin.hotel.common.enumuration.ImageType;
+import com.lenin.hotel.common.service.IEmailService;
+import com.lenin.hotel.common.enumuration.ERole;
+import com.lenin.hotel.common.exception.BusinessException;
+import com.lenin.hotel.common.exception.ResourceNotFoundException;
+import com.lenin.hotel.hotel.dto.request.ImageRequest;
+import com.lenin.hotel.hotel.dto.response.UserResponse;
+import com.lenin.hotel.hotel.model.Image;
+import com.lenin.hotel.hotel.repository.ImageRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.lenin.hotel.authentication.utils.UserUtils.buildUserResponse;
+import static com.lenin.hotel.common.utils.SecurityUtils.getCurrentUsername;
+import static com.lenin.hotel.hotel.utils.ImageUtils.buildImage;
+
+
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements IUserService {
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final IEmailService IEmailService;
+    private final JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
+    private final RefreshTokenService refreshTokenService;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder encoder;
+    private final ImageRepository imageRepository;
+
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern(&quot;dd-MM-yyyy HH:mm:ss z&quot;);
+
+    public Map&lt;String, String&gt; signup(SignupRequest signupRequest) {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (userRepository.existsByUsername(signupRequest.getUsername())) {</span>
+<span class="fc" id="L63">            throw new BusinessException(&quot;Username is already taken!&quot;);</span>
+        }
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (userRepository.existsByEmail(signupRequest.getEmail())) {</span>
+<span class="nc" id="L66">            throw new BusinessException(&quot;Email is already in use!&quot;);</span>
+        }
+
+        // create new user
+<span class="fc" id="L70">        User user = new User(signupRequest.getUsername(), signupRequest.getEmail(), encoder.encode(signupRequest.getPassword()));</span>
+<span class="fc" id="L71">        Set&lt;Role&gt; roles = new HashSet&lt;&gt;();</span>
+<span class="pc" id="L72">        roles.add(roleRepository.findByName(ERole.ROLE_USER).orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Role not found!&quot;)));</span>
+<span class="fc" id="L73">        user.setRoles(roles);</span>
+<span class="fc" id="L74">        user.setBanReason(&quot;Not active yet&quot;);</span>
+<span class="fc" id="L75">        userRepository.save(user);</span>
+<span class="fc" id="L76">        IEmailService.sendMailActiveAccount(user.getUsername(), user.getEmail(), jwtUtil.generateToken(user.getEmail()));</span>
+<span class="fc" id="L77">        return Map.of(&quot;message&quot;,&quot;User registered successfully! Please check your email to activate your account!&quot;);</span>
+    }
+
+    public ResponseEntity&lt;?&gt; signin(LoginRequest loginRequest) {
+<span class="fc" id="L81">        User user = userRepository.getByUsername(loginRequest.getUsername())</span>
+<span class="fc" id="L82">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;));</span>
+
+<span class="pc bpc" id="L84" title="3 of 4 branches missed.">        if (user.getBanUntil() != null &amp;&amp; user.getBanUntil().isAfter(ZonedDateTime.now())) {</span>
+<span class="nc" id="L85">            return ResponseEntity.badRequest().body(Map.of(&quot;message&quot;, &quot;Your account has been banned until &quot; + formatter.format(user.getBanUntil())));</span>
+        }
+        try {
+<span class="fc" id="L88">            Authentication authentication = authenticationManager.authenticate(</span>
+                    new UsernamePasswordAuthenticationToken(
+<span class="fc" id="L90">                            loginRequest.getUsername(),</span>
+<span class="fc" id="L91">                            loginRequest.getPassword()</span>
+                    )
+            );
+<span class="fc" id="L94">            SecurityContextHolder.getContext().setAuthentication(authentication);</span>
+<span class="fc" id="L95">            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();</span>
+            // reset login fail count
+<span class="fc" id="L97">            user.setFailedLoginAttempts(0);</span>
+<span class="fc" id="L98">            user.setBanUntil(null);</span>
+<span class="fc" id="L99">            userRepository.save(user);</span>
+
+<span class="fc" id="L101">            String jwt = jwtUtil.generateToken(userDetails);</span>
+<span class="fc" id="L102">            List&lt;String&gt; roles = userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();</span>
+<span class="fc" id="L103">            RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());</span>
+            //avatar
+<span class="fc" id="L105">            List&lt;Image&gt; avatars = imageRepository.findByReferenceIdAndReferenceTableAndType(userDetails.getId().intValue(), &quot;users&quot;, ImageType.HOTEL);</span>
+<span class="fc" id="L106">            String avatarUrl = avatars.stream().findFirst().map(Image::getUrl).orElse(null);</span>
+
+<span class="fc" id="L108">            return ResponseEntity.ok(new JwtResponse(jwt, refreshToken.getToken(), userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles, avatarUrl));</span>
+<span class="fc" id="L109">        } catch (BadCredentialsException e) {</span>
+<span class="fc" id="L110">            user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">            if (user.getFailedLoginAttempts() &gt;= 5) {</span>
+<span class="nc" id="L112">                user.setBanUntil(ZonedDateTime.now().plusMinutes(2));</span>
+            }
+<span class="fc" id="L114">            userRepository.save(user);</span>
+<span class="fc" id="L115">            return ResponseEntity.badRequest().body(Map.of(&quot;message&quot;, &quot;Invalid username or password&quot;));</span>
+        }
+    }
+
+    private Map&lt;String, String&gt; changePasswordProcess(ResetPasswordRequest request) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (!request.getNewPassword().equals(request.getConfirmPassword())) {</span>
+<span class="nc" id="L121">            throw new BusinessException(&quot;Passwords do not match&quot;);</span>
+        }
+<span class="fc" id="L123">        String username = getCurrentUsername();</span>
+<span class="pc" id="L124">        User user = userRepository.getByUsername(username).orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found!&quot;));</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {</span>
+<span class="fc" id="L126">            throw new BusinessException(&quot;Current password is incorrect&quot;);</span>
+        }
+<span class="fc" id="L128">        user.setPassword(passwordEncoder.encode(request.getNewPassword()));</span>
+<span class="fc" id="L129">        userRepository.save(user);</span>
+<span class="fc" id="L130">        return Map.of(&quot;message&quot;, &quot;Password changed successfully&quot;);</span>
+    }
+
+    public Map&lt;String, String&gt; resetPassword(ResetPasswordRequest request) {
+<span class="fc" id="L134">        return changePasswordProcess(request);</span>
+    }
+
+    @Override
+    public void updateProfile(UpdateProfileRequest update) {
+<span class="nc" id="L139">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -&gt; new RuntimeException(&quot;User not found!&quot;));</span>
+<span class="nc" id="L140">        user.setEmail(update.getEmail());</span>
+<span class="nc" id="L141">        user.setAddress(update.getAddress());</span>
+<span class="nc" id="L142">        user.setPhoneNumber(update.getPhoneNumber());</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (update.getAvatarUrl() != null) {</span>
+<span class="nc" id="L144">            List&lt;Image&gt; image = imageRepository.findByReferenceIdAndReferenceTableAndType(user.getId().intValue(), &quot;users&quot;, ImageType.HOTEL);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (!image.isEmpty()) {</span>
+<span class="nc" id="L146">                image.get(0).setUrl(update.getAvatarUrl());</span>
+<span class="nc" id="L147">                imageRepository.save(image.get(0));</span>
+            } else {
+<span class="nc" id="L149">                ImageRequest imageRequest = ImageRequest.builder()</span>
+<span class="nc" id="L150">                        .url(update.getAvatarUrl())</span>
+<span class="nc" id="L151">                        .type(ImageType.HOTEL)</span>
+<span class="nc" id="L152">                        .build();</span>
+<span class="nc" id="L153">                Image newImage = buildImage(imageRequest, user.getId().intValue(), &quot;users&quot;);</span>
+<span class="nc" id="L154">                imageRepository.save(newImage);</span>
+            }
+        }
+<span class="nc" id="L157">        userRepository.save(user);</span>
+<span class="nc" id="L158">    }</span>
+
+    public Map&lt;String, String&gt; forgotPassword(String email) {
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        if (userRepository.existsByEmail(email)) {</span>
+<span class="fc" id="L162">            User user = userRepository.findByEmail(email);</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            if (user == null) {</span>
+<span class="fc" id="L164">                return Map.of(&quot;message&quot;, &quot;If your email exist in our system, then you will receive instructions on resetting your password.&quot;);</span>
+            }
+<span class="pc bpc" id="L166" title="3 of 4 branches missed.">            if (user.getBanUntil() != null &amp;&amp; user.getBanUntil().isAfter(ZonedDateTime.now())) {</span>
+<span class="nc" id="L167">                throw new BusinessException(&quot;Your account has been banned until &quot; + formatter.format(user.getBanUntil()));</span>
+            }
+<span class="fc" id="L169">            IEmailService.sendMailForgotPassword(user.getUsername(), user.getEmail(), jwtUtil.generateToken(email));</span>
+        }
+<span class="fc" id="L171">        return Map.of(&quot;message&quot;, &quot;If your email exist in our system, then you will receive instructions on resetting your password.&quot;);</span>
+    }
+
+    public Map&lt;String, String&gt; forgotPassword(String token, ForgotPasswordRequest request) {
+<span class="nc" id="L175">        boolean validToken = jwtUtil.validateJwtToken(token);</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">        if (validToken) {</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (!request.getNewPassword().equals(request.getConfirmPassword())) {</span>
+<span class="nc" id="L178">                throw new BusinessException(&quot;Passwords do not match&quot;);</span>
+            }
+<span class="nc" id="L180">            String email = jwtUtil.getUsernameFromToken(token);</span>
+<span class="nc" id="L181">            User user = userRepository.getByEmail(email).orElseThrow(() -&gt; new RuntimeException(&quot;User not found!&quot;));</span>
+<span class="nc" id="L182">            user.setPassword(passwordEncoder.encode(request.getNewPassword()));</span>
+<span class="nc" id="L183">            userRepository.save(user);</span>
+<span class="nc" id="L184">            return Map.of(&quot;message&quot;, &quot;Password changed successfully&quot;);</span>
+        } else
+<span class="nc" id="L186">            throw new BusinessException(&quot;Invalid or expired token, please try again &quot;);</span>
+    }
+
+    public Map&lt;String, String&gt; activeAccount(String token) {
+<span class="nc" id="L190">        boolean validToken = jwtUtil.validateJwtToken(token);</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (validToken) {</span>
+<span class="nc" id="L192">            String email = jwtUtil.getUsernameFromToken(token);</span>
+<span class="nc" id="L193">            User user = userRepository.getByEmail(email).orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found!&quot;));</span>
+<span class="nc" id="L194">            user.setBanReason(null);</span>
+<span class="nc" id="L195">            userRepository.save(user);</span>
+<span class="nc" id="L196">            IEmailService.sendMailSignupSuccess(user.getUsername(), user.getEmail());</span>
+<span class="nc" id="L197">            return Map.of(&quot;message&quot;, &quot;Account activated successfully&quot;);</span>
+        } else
+<span class="nc" id="L199">            throw new BusinessException(&quot;Invalid or expired token, please try again &quot;);</span>
+    }
+
+    @Override
+    public UserResponse getHotelOwner(Integer id) {
+<span class="nc" id="L204">        User user = userRepository.getById(id)</span>
+<span class="nc" id="L205">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Hotel owner id not found!&quot;));</span>
+
+        // Chỉ trả về nếu user có role HOTEL_OWNER
+<span class="nc" id="L208">        boolean isHotelOwner = user.getRoles().stream()</span>
+<span class="nc" id="L209">                .anyMatch(role -&gt; role.getName().equals(ERole.ROLE_HOTEL));</span>
+
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        if (!isHotelOwner) {</span>
+<span class="nc" id="L212">            throw new ResourceNotFoundException(&quot;User is not a hotel owner!&quot;);</span>
+        }
+
+<span class="nc" id="L215">        UserResponse userResponse = buildUserResponse(user, imageRepository);</span>
+
+
+
+<span class="nc" id="L219">        return userResponse;</span>
+    }
+
+    @Override
+    public UserResponse getUserInfo() {
+<span class="pc" id="L224">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found!&quot;));</span>
+<span class="fc" id="L225">        UserResponse userResponse = buildUserResponse(user, imageRepository);</span>
+<span class="fc" id="L226">        return userResponse;</span>
+    }
+
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

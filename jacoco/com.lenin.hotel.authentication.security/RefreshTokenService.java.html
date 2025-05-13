@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RefreshTokenService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.authentication.security</a> &gt; <span class="el_source">RefreshTokenService.java</span></div><h1>RefreshTokenService.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.authentication.security;
+
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+
+import com.lenin.hotel.common.exception.TokenRefreshException;
+import com.lenin.hotel.authentication.model.RefreshToken;
+import com.lenin.hotel.authentication.repository.RefreshTokenRepository;
+import com.lenin.hotel.authentication.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+
+@Service
+@Transactional
+<span class="fc" id="L19">public class RefreshTokenService {</span>
+    @Value(&quot;${hotel.jwt.refreshToken}&quot;)
+    private Long refreshTokenDurationMs;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    public Optional&lt;RefreshToken&gt; findByToken(String token) {
+<span class="fc" id="L30">        return refreshTokenRepository.findByToken(token);</span>
+    }
+
+//    public RefreshToken createRefreshToken(Long userId) {
+//        RefreshToken refreshToken = new RefreshToken();
+//
+//        refreshToken.setUser(userRepository.findById(userId).get());
+//        refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));
+//        refreshToken.setToken(UUID.randomUUID().toString());
+//
+//        refreshToken = refreshTokenRepository.save(refreshToken);
+//        return refreshToken;
+//    }
+
+    public RefreshToken createRefreshToken(Long userId) {
+        // Xóa refresh token cũ nếu có
+<span class="fc" id="L46">        refreshTokenRepository.deleteByUserId(userId);</span>
+<span class="fc" id="L47">        refreshTokenRepository.flush();</span>
+<span class="fc" id="L48">        RefreshToken refreshToken = new RefreshToken();</span>
+<span class="fc" id="L49">        refreshToken.setUser(userRepository.findById(userId)</span>
+<span class="pc" id="L50">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found&quot;)));</span>
+<span class="fc" id="L51">        refreshToken.setExpiryDate(Instant.now().plusMillis(refreshTokenDurationMs));</span>
+<span class="fc" id="L52">        refreshToken.setToken(UUID.randomUUID().toString());</span>
+
+<span class="fc" id="L54">        return refreshTokenRepository.save(refreshToken);</span>
+    }
+
+    public RefreshToken verifyExpiration(RefreshToken token) {
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        if (token.getExpiryDate().compareTo(Instant.now()) &lt; 0) {</span>
+<span class="nc" id="L59">            refreshTokenRepository.delete(token);</span>
+<span class="nc" id="L60">            throw new TokenRefreshException(&quot;Refresh token was expired. Please make a new signin request&quot;);</span>
+        }
+
+<span class="fc" id="L63">        return token;</span>
+    }
+
+    @Transactional
+    public int deleteByUserId(Long userId) {
+<span class="fc" id="L68">        return refreshTokenRepository.deleteByUser(userRepository.findById(userId).get());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

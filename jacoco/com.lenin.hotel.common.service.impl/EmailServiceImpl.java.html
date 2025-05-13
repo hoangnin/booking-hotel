@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmailServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.common.service.impl</a> &gt; <span class="el_source">EmailServiceImpl.java</span></div><h1>EmailServiceImpl.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.common.service.impl;
+
+import com.lenin.hotel.hotel.model.Booking;
+import com.lenin.hotel.common.service.IEmailService;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+
+import static com.lenin.hotel.common.utils.EmailTemplateUtils.*;
+
+@Service
+@RequiredArgsConstructor
+<span class="fc" id="L21">@Slf4j</span>
+public class EmailServiceImpl implements IEmailService {
+    private final JavaMailSender javaMailSender;
+    @Value(&quot;${hotel.frontEnd.host}&quot;)
+    private String frontEndHostValue;
+    @Value(&quot;${hotel.frontEnd.forgotPasswordPath}&quot;)
+    private String frontEndForgotPasswordPathValue;
+    @Value(&quot;${hotel.frontEnd.activeAccount}&quot;)
+    private String frontEndActiveAccountValue;
+
+
+    @Value(&quot;${spring.mail.username}&quot;)
+    private String SENDER_EMAIL;
+
+    @Value(&quot;${spring.application.name}&quot;)
+    private String SERVICE_NAME;
+
+    @Async
+    public void sendEmailWithPdf(String to, String subject, String text, byte[] pdfData, String fileName) {
+        try {
+<span class="fc" id="L41">            MimeMessage message = javaMailSender.createMimeMessage();</span>
+<span class="fc" id="L42">            MimeMessageHelper helper = new MimeMessageHelper(message, true);</span>
+
+<span class="fc" id="L44">            helper.setTo(to);</span>
+<span class="fc" id="L45">            helper.setSubject(subject);</span>
+<span class="fc" id="L46">            helper.setText(text);</span>
+
+<span class="fc" id="L48">            helper.addAttachment(fileName, new ByteArrayResource(pdfData));</span>
+
+<span class="nc" id="L50">            javaMailSender.send(message);</span>
+<span class="nc" id="L51">        } catch (MessagingException e) {</span>
+<span class="nc" id="L52">            throw new RuntimeException(&quot;Failed to send email&quot;, e);</span>
+<span class="nc" id="L53">        }</span>
+<span class="nc" id="L54">    }</span>
+
+    @Async
+    public void sendMailSignupSuccess(String username, String email) {
+        try {
+<span class="nc" id="L59">            SimpleMailMessage message = new SimpleMailMessage();</span>
+<span class="nc" id="L60">            message.setSubject(&quot;Vinova - Register success&quot;);</span>
+<span class="nc" id="L61">            message.setFrom(SENDER_EMAIL);</span>
+<span class="nc" id="L62">            message.setTo(email);</span>
+<span class="nc" id="L63">            message.setText(signupSuccessEmail(username));</span>
+<span class="nc" id="L64">            javaMailSender.send(message);</span>
+<span class="nc" id="L65">        } catch (Exception e) {</span>
+<span class="nc" id="L66">            log.error(e.getMessage());</span>
+<span class="nc" id="L67">            throw new RuntimeException();</span>
+<span class="nc" id="L68">        }</span>
+<span class="nc" id="L69">    }</span>
+
+    @Async
+    public void sendMailBookingSuccess(Booking booking) {
+        try{
+<span class="fc" id="L74">            SimpleMailMessage message = new SimpleMailMessage();</span>
+<span class="fc" id="L75">            message.setSubject(&quot;Vinova - Booking success&quot;);</span>
+<span class="fc" id="L76">            message.setFrom(SENDER_EMAIL);</span>
+<span class="fc" id="L77">            message.setTo(booking.getUser().getEmail());</span>
+<span class="fc" id="L78">            message.setText(bookingSuccessEmail(booking));</span>
+<span class="nc" id="L79">            javaMailSender.send(message);</span>
+<span class="fc" id="L80">        }catch (Exception e){</span>
+<span class="fc" id="L81">            log.error(e.getMessage());</span>
+<span class="fc" id="L82">            throw new RuntimeException();</span>
+<span class="nc" id="L83">        }</span>
+<span class="nc" id="L84">    }</span>
+
+    @Async
+    public void sendMailForgotPassword(String username, String email, String tokenUrl) {
+        try {
+<span class="fc" id="L89">            SimpleMailMessage message = new SimpleMailMessage();</span>
+<span class="fc" id="L90">            message.setSubject(&quot;Vinova - Forgot Password&quot;);</span>
+<span class="fc" id="L91">            message.setFrom(SENDER_EMAIL);</span>
+<span class="fc" id="L92">            message.setTo(email);</span>
+<span class="fc" id="L93">            message.setText(forgotPasswordEmail(username, email, frontEndHostValue, frontEndForgotPasswordPathValue, tokenUrl));</span>
+<span class="nc" id="L94">            javaMailSender.send(message);</span>
+<span class="fc" id="L95">        } catch (Exception e) {</span>
+<span class="fc" id="L96">            log.error(e.getMessage());</span>
+<span class="fc" id="L97">            throw new RuntimeException();</span>
+<span class="nc" id="L98">        }</span>
+<span class="nc" id="L99">    }</span>
+    @Async
+    public void sendMailActiveAccount(String username, String email, String tokenUrl) {
+        try {
+<span class="fc" id="L103">            SimpleMailMessage message = new SimpleMailMessage();</span>
+<span class="fc" id="L104">            message.setSubject(&quot;Vinova - Active Account&quot;);</span>
+<span class="fc" id="L105">            message.setFrom(SENDER_EMAIL);</span>
+<span class="fc" id="L106">            message.setTo(email);</span>
+<span class="fc" id="L107">            message.setText(activeAccountEmail(username, frontEndHostValue, frontEndActiveAccountValue, tokenUrl ));</span>
+<span class="nc" id="L108">            javaMailSender.send(message);</span>
+<span class="fc" id="L109">        } catch (Exception e) {</span>
+<span class="fc" id="L110">            log.error(e.getMessage());</span>
+<span class="fc" id="L111">            throw new RuntimeException();</span>
+<span class="nc" id="L112">        }</span>
+<span class="nc" id="L113">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

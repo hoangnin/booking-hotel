@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HotelServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.hotel.service.impl</a> &gt; <span class="el_source">HotelServiceImpl.java</span></div><h1>HotelServiceImpl.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.hotel.service.impl;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.lenin.hotel.authentication.model.Role;
+import com.lenin.hotel.authentication.model.User;
+import com.lenin.hotel.authentication.repository.RoleRepository;
+import com.lenin.hotel.authentication.repository.UserRepository;
+import com.lenin.hotel.common.enumuration.BookingStatus;
+import com.lenin.hotel.hotel.model.Booking;
+import com.lenin.hotel.hotel.model.Location;
+import com.lenin.hotel.common.enumuration.ERole;
+import com.lenin.hotel.common.enumuration.ImageType;
+import com.lenin.hotel.common.exception.BusinessException;
+import com.lenin.hotel.common.exception.ResourceNotFoundException;
+import com.lenin.hotel.common.service.IEmailService;
+import com.lenin.hotel.common.service.PdfGeneratorService;
+import com.lenin.hotel.hotel.HotelSpecification;
+import com.lenin.hotel.hotel.dto.request.ChangePriceRequest;
+import com.lenin.hotel.hotel.dto.request.PriceTrackingRequest;
+import com.lenin.hotel.hotel.dto.response.QuickOverview;
+import com.lenin.hotel.hotel.model.Amenity;
+import com.lenin.hotel.hotel.model.Hotel;
+import com.lenin.hotel.hotel.model.Image;
+import com.lenin.hotel.hotel.model.PriceTracking;
+import com.lenin.hotel.hotel.repository.*;
+import com.lenin.hotel.hotel.dto.request.HotelRequest;
+import com.lenin.hotel.hotel.dto.response.BookedDateRange;
+import com.lenin.hotel.hotel.dto.response.HotelResponse;
+import com.lenin.hotel.hotel.service.IHotelService;
+import com.lenin.hotel.hotel.utils.HotelUtils;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static com.lenin.hotel.common.utils.SecurityUtils.getCurrentUsername;
+import static com.lenin.hotel.hotel.utils.HotelUtils.*;
+import static com.lenin.hotel.hotel.utils.ImageUtils.buildImage;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class HotelServiceImpl implements IHotelService {
+    private final HotelRepository hotelRepository;
+    private final LocationRepository locationRepository;
+    private final UserRepository userRepository;
+    private final AmenityRepository amenityRepository;
+    private final ImageRepository imageRepository;
+    private final PriceTrackingRepository priceTrackingRepository;
+    private final RoleRepository roleRepository;
+    private final PdfGeneratorService pdfGeneratorService;
+    private final IEmailService emailService;
+    private final BookingRepository bookingRepository;
+
+    @Override
+    public void createHotel(HotelRequest hotelRequest) {
+<span class="fc" id="L71">        Hotel hotel = buildHotel(hotelRequest);</span>
+<span class="pc" id="L72">        Location location = locationRepository.findById(hotelRequest.getLocationId()).orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Location not found!&quot;));</span>
+<span class="fc" id="L73">        hotel.setLocation(location);</span>
+
+<span class="fc" id="L75">        List&lt;Amenity&gt; amenities = Optional.of(amenityRepository.findAllById(hotelRequest.getAmenities()))</span>
+<span class="fc" id="L76">                .orElse(Collections.emptyList());</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        if (amenities.size() != hotelRequest.getAmenities().size()) {</span>
+<span class="nc" id="L78">            throw new ResourceNotFoundException(&quot;One or more amenities not found!&quot;);</span>
+        }
+<span class="fc" id="L80">        hotel.setAmenities(amenities);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        for (Amenity amenity : amenities) {</span>
+<span class="fc" id="L82">            amenity.getHotels().add(hotel);</span>
+<span class="fc" id="L83">        }</span>
+<span class="fc" id="L84">        amenityRepository.saveAll(amenities);</span>
+
+<span class="pc" id="L86">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found!&quot;));</span>
+<span class="fc" id="L87">        hotel.setOwner(user);</span>
+<span class="fc" id="L88">        hotelRepository.save(hotel);</span>
+
+<span class="fc" id="L90">        PriceTracking priceTracking = buildPriceTracking(hotelRequest.getPrice());</span>
+<span class="fc" id="L91">        priceTracking.setHotel(hotel);</span>
+<span class="fc" id="L92">        priceTrackingRepository.save(priceTracking);</span>
+<span class="fc" id="L93">        hotel.setPriceTrackings(Collections.singletonList(priceTracking));</span>
+
+
+<span class="fc" id="L96">        List&lt;Image&gt; images = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L97" title="1 of 4 branches missed.">        if (hotelRequest.getImages() != null &amp;&amp; !hotelRequest.getImages().isEmpty()) {</span>
+<span class="nc" id="L98">            images = hotelRequest.getImages().stream().map(imageRequest -&gt; buildImage(imageRequest, hotel.getId(), &quot;hotels&quot;)).toList();</span>
+        }
+<span class="fc" id="L100">        imageRepository.saveAll(images);</span>
+<span class="fc" id="L101">    }</span>
+
+    @Override
+    public List&lt;HotelResponse&gt; getAllHotel(Pageable pageable, Integer hotelId, Integer ownerId, Double latitude, Double longitude) {
+<span class="nc" id="L105">        List&lt;Hotel&gt; hotels = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L107" title="All 4 branches missed.">        if (hotelId != null &amp;&amp; hotelId &gt; 0) {</span>
+<span class="nc" id="L108">            hotels = List.of(hotelRepository.findById(hotelId)</span>
+<span class="nc" id="L109">                    .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Hotel not found!&quot;)));</span>
+<span class="nc bnc" id="L110" title="All 4 branches missed.">        } else if (ownerId != null &amp;&amp; ownerId &gt; 0) {</span>
+<span class="nc" id="L111">            hotels = hotelRepository.findAllByOwnerId(ownerId);</span>
+<span class="nc bnc" id="L112" title="All 4 branches missed.">        } else if (latitude != null &amp;&amp; longitude != null) {</span>
+<span class="nc" id="L113">            int offset = pageable.getPageSize() * pageable.getPageNumber();</span>
+<span class="nc" id="L114">            hotels = hotelRepository.findNearbyHotels(latitude, longitude, pageable.getPageSize(), offset);</span>
+<span class="nc" id="L115">        } else {</span>
+<span class="nc" id="L116">            hotels = hotelRepository.findAll(pageable).toList();</span>
+        }
+
+
+<span class="nc" id="L120">        return hotels.stream()</span>
+<span class="nc" id="L121">                .map(this::convertToHotelResponse)</span>
+<span class="nc" id="L122">                .filter(Objects::nonNull)</span>
+<span class="nc" id="L123">                .toList();</span>
+    }
+    public HotelResponse convertToHotelResponse(Hotel hotel) {
+<span class="fc" id="L126">        List&lt;BookedDateRange&gt; bookedDateRanges = Optional.ofNullable(hotel.getBookings())</span>
+<span class="fc" id="L127">                .orElse(Collections.emptyList()) // Handle null bookings</span>
+<span class="fc" id="L128">                .stream()</span>
+<span class="pc" id="L129">                .map(booking -&gt; BookedDateRange.builder()</span>
+<span class="nc" id="L130">                        .checkIn(booking.getCheckIn())</span>
+<span class="nc" id="L131">                        .checkOut(booking.getCheckOut())</span>
+<span class="nc" id="L132">                        .build())</span>
+<span class="fc" id="L133">                .toList();</span>
+
+<span class="fc" id="L135">        List&lt;Image&gt; images = imageRepository.findByReferenceIdAndReferenceTableAndType(</span>
+<span class="fc" id="L136">                hotel.getId(), &quot;hotels&quot;, ImageType.ROOM);</span>
+
+<span class="fc" id="L138">        PriceTracking priceTracking = getLatestPrice(Long.valueOf(hotel.getId()));</span>
+
+
+<span class="fc" id="L141">        return HotelUtils.buildHotelResponse(hotel, images, priceTracking.getPrice(), bookedDateRanges);</span>
+    }
+
+    public PriceTracking getLatestPrice(Long hotelId) {
+<span class="fc" id="L145">        return priceTrackingRepository.findTopByHotelIdOrderByCreateDtDesc(hotelId)</span>
+<span class="pc" id="L146">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Not found price for hotelId: &quot; + hotelId));</span>
+    }
+
+    @Override
+    public void activeHotelOwner(Integer hotelOwnerId) {
+<span class="fc" id="L151">        User user = userRepository.getById(hotelOwnerId).orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found!&quot;));</span>
+
+<span class="fc" id="L153">        Role hotelOwnerRole = roleRepository.findByName(ERole.ROLE_HOTEL)</span>
+<span class="fc" id="L154">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Role not found!&quot;));</span>
+<span class="fc" id="L155">        user.addRole(hotelOwnerRole);</span>
+<span class="fc" id="L156">        userRepository.save(user);</span>
+<span class="fc" id="L157">    }</span>
+
+    @Override
+    public List&lt;HotelResponse&gt; searchHotels(String name, Integer locationId, Double rating,
+                                            Set&lt;Integer&gt; amenityIds, Double minPrice, Double maxPrice,
+                                            Integer minRoomsAvailable, String hotelType,
+                                            ZonedDateTime checkin, ZonedDateTime checkout) {
+<span class="nc" id="L164">        Specification&lt;Hotel&gt; spec = HotelSpecification.filterHotels(name, locationId, rating,</span>
+                amenityIds, minPrice, maxPrice, minRoomsAvailable, hotelType, checkin, checkout);
+<span class="nc" id="L166">        return hotelRepository.findAll(spec).stream().map(this::convertToHotelResponse).toList();</span>
+    }
+
+    @Override
+    public void changePrice(ChangePriceRequest changePriceRequest) {
+<span class="pc" id="L171">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -&gt; new ResourceNotFoundException(&quot;User not found!&quot;));</span>
+<span class="pc" id="L172">        Hotel hotel = hotelRepository.findById(changePriceRequest.getHotelId()).orElseThrow(() -&gt; new RuntimeException(&quot;Hotel not found!&quot;));</span>
+
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        if (!hotel.getOwner().getId().equals(user.getId())) {</span>
+<span class="nc" id="L175">            throw new AccessDeniedException(&quot;You do not have permission to change this hotel's price.&quot;);</span>
+        }
+
+<span class="fc" id="L178">        PriceTracking priceTracking = PriceTracking.builder()</span>
+<span class="fc" id="L179">                .price(changePriceRequest.getNewPrice())</span>
+<span class="fc" id="L180">                .hotel(hotel)</span>
+<span class="fc" id="L181">                .build();</span>
+<span class="fc" id="L182">        priceTrackingRepository.save(priceTracking);</span>
+<span class="fc" id="L183">    }</span>
+
+    @Override
+    public void generateAndSendHotelOwnerReport() {
+<span class="fc" id="L187">        User user = userRepository.getByUsername(getCurrentUsername())</span>
+<span class="pc" id="L188">                .orElseThrow(() -&gt; new RuntimeException(&quot;User not found!&quot;));</span>
+
+<span class="fc" id="L190">        List&lt;Hotel&gt; hotels = hotelRepository.findByOwner(user);</span>
+
+        // Tạo PDF
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">        if (hotels.isEmpty()) {</span>
+<span class="nc" id="L194">            throw new RuntimeException(&quot;No hotels found for this user.&quot;);</span>
+        }
+        byte[] pdfData;
+<span class="pc bpc" id="L197" title="1 of 4 branches missed.">        if (user.getRoles().stream().anyMatch(role -&gt; role.getName() == ERole.ROLE_HOTEL)) {</span>
+<span class="fc" id="L198">            pdfData = pdfGeneratorService.generateAdminHotelReport(hotels);</span>
+        }else {
+<span class="nc" id="L200">            pdfData = pdfGeneratorService.generateOwnerHotelReport(user.getUsername(), hotels);</span>
+        }
+
+        // Gửi email
+<span class="fc" id="L204">        String fileName = pdfGeneratorService.generatePdfFileName();</span>
+<span class="fc" id="L205">        emailService.sendEmailWithPdf(</span>
+<span class="fc" id="L206">                user.getEmail(),</span>
+                &quot;Hotel Report&quot;,
+                &quot;Attached is the list of hotels you own.&quot;,
+                pdfData,
+                fileName
+        );
+<span class="fc" id="L212">    }</span>
+
+    @Override
+    public Map&lt;String, String&gt; addFavorite(Integer hotelId) {
+<span class="pc" id="L216">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -&gt; new RuntimeException(&quot;User not found!&quot;));</span>
+<span class="pc" id="L217">        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -&gt; new RuntimeException(&quot;Hotel not found!&quot;));</span>
+<span class="fc" id="L218">        user.getFavoriteHotels().add(hotel);</span>
+<span class="fc" id="L219">        userRepository.save(user);</span>
+<span class="fc" id="L220">        return Map.of(&quot;message&quot;, &quot;Successfully added favorite hotel.&quot;);</span>
+    }
+
+    @Override
+    public void removeFavorite(Integer hotelId) {
+<span class="pc" id="L225">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -&gt; new RuntimeException(&quot;User not found!&quot;));</span>
+<span class="pc" id="L226">        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -&gt; new RuntimeException(&quot;Hotel not found!&quot;));</span>
+<span class="fc" id="L227">        user.getFavoriteHotels().remove(hotel);</span>
+<span class="fc" id="L228">        userRepository.save(user);</span>
+<span class="fc" id="L229">    }</span>
+
+    @Override
+    public List&lt;Integer&gt; getHotelsByHotelOwnerId() {
+<span class="pc" id="L233">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -&gt; new RuntimeException(&quot;User not found!&quot;));</span>
+<span class="fc" id="L234">        List&lt;Hotel&gt; hotels = hotelRepository.findByOwner(user);</span>
+<span class="fc" id="L235">        return hotels.stream().map(Hotel::getId).collect(Collectors.toList());</span>
+    }
+
+    public void updateHotel(Integer id, JsonNode hotelJson) {
+<span class="pc" id="L239">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -&gt; new RuntimeException(&quot;User not found!&quot;));</span>
+
+<span class="fc" id="L241">        Hotel hotel = hotelRepository.findById(id)</span>
+<span class="pc" id="L242">                .orElseThrow(() -&gt; new ResourceNotFoundException(&quot;Hotel not found&quot;));</span>
+
+<span class="fc bfc" id="L244" title="All 2 branches covered.">        if (!user.getId().equals(hotel.getOwner().getId())) {</span>
+<span class="fc" id="L245">            throw new BusinessException(&quot;You do not have permission to change this hotel.&quot;);</span>
+        }
+
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;title&quot;)) {</span>
+<span class="fc" id="L249">            hotel.setName(hotelJson.get(&quot;title&quot;).asText());</span>
+        }
+
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;description&quot;)) {</span>
+<span class="nc" id="L253">            hotel.setDescription(hotelJson.get(&quot;description&quot;).asText());</span>
+        }
+
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;address&quot;)) {</span>
+<span class="nc" id="L257">            hotel.setAddress(hotelJson.get(&quot;address&quot;).asText());</span>
+        }
+
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;price&quot;)) {</span>
+<span class="nc" id="L261">            PriceTrackingRequest priceTrackingRequest = PriceTrackingRequest.builder().price(new BigDecimal(String.valueOf(hotelJson.get(&quot;price&quot;)))).build();</span>
+<span class="nc" id="L262">            PriceTracking priceTracking = buildPriceTracking(priceTrackingRequest);</span>
+<span class="nc" id="L263">            priceTracking.setHotel(hotel);</span>
+<span class="nc" id="L264">            priceTrackingRepository.save(priceTracking);</span>
+<span class="nc" id="L265">            hotel.getPriceTrackings().add(priceTracking);</span>
+        }
+
+<span class="pc bpc" id="L268" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;phone&quot;)) {</span>
+<span class="nc" id="L269">            hotel.setPhone(hotelJson.get(&quot;phone&quot;).asText());</span>
+        }
+
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;email&quot;)) {</span>
+<span class="nc" id="L273">            hotel.setEmail(hotelJson.get(&quot;email&quot;).asText());</span>
+        }
+
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;policy&quot;)) {</span>
+<span class="nc" id="L277">            hotel.setPolicy(hotelJson.get(&quot;policy&quot;).asText());</span>
+        }
+
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;latitude&quot;)) {</span>
+<span class="nc" id="L281">            hotel.setLatitude(hotelJson.get(&quot;latitude&quot;).asDouble());</span>
+        }
+
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;longitude&quot;)) {</span>
+<span class="nc" id="L285">            hotel.setLongitude(hotelJson.get(&quot;longitude&quot;).asDouble());</span>
+        }
+
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">        if (hotelJson.has(&quot;googleMapEmbed&quot;)) {</span>
+<span class="nc" id="L289">            hotel.setGoogleMapEmbed(hotelJson.get(&quot;googleMapEmbed&quot;).asText());</span>
+        }
+
+        // Xử lý amenities (List&lt;String&gt; ID tiện ích)
+<span class="pc bpc" id="L293" title="3 of 4 branches missed.">        if (hotelJson.has(&quot;amenities&quot;) &amp;&amp; hotelJson.get(&quot;amenities&quot;).isArray()) {</span>
+<span class="nc" id="L294">            List&lt;String&gt; amenityIds = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">            for (JsonNode node : hotelJson.get(&quot;amenities&quot;)) {</span>
+<span class="nc" id="L296">                amenityIds.add(node.asText());</span>
+<span class="nc" id="L297">            }</span>
+<span class="nc" id="L298">            List&lt;Amenity&gt; amenities = amenityRepository.findAllByIdIn(amenityIds);</span>
+<span class="nc" id="L299">            hotel.setAmenities(amenities);</span>
+        }
+
+        // Xử lý ảnh
+<span class="pc bpc" id="L303" title="3 of 4 branches missed.">        if (hotelJson.has(&quot;images&quot;) &amp;&amp; hotelJson.get(&quot;images&quot;).isArray()) {</span>
+<span class="nc" id="L304">            List&lt;Image&gt; newImages = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L305">            Set&lt;String&gt; incomingImageIds = new HashSet&lt;&gt;();</span>
+
+<span class="nc bnc" id="L307" title="All 2 branches missed.">            for (JsonNode imageNode : hotelJson.get(&quot;images&quot;)) {</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">                if (imageNode.has(&quot;id&quot;)) {</span>
+                    // Ảnh cũ, giữ lại
+<span class="nc" id="L310">                    incomingImageIds.add(imageNode.get(&quot;id&quot;).asText());</span>
+                } else {
+                    // Ảnh mới
+<span class="nc" id="L313">                    Image image = Image.builder()</span>
+<span class="nc" id="L314">                            .url(imageNode.get(&quot;url&quot;).asText())</span>
+<span class="nc" id="L315">                            .type(ImageType.ROOM)</span>
+<span class="nc" id="L316">                            .referenceId(hotel.getId())</span>
+<span class="nc" id="L317">                            .referenceTable(&quot;hotels&quot;)</span>
+<span class="nc" id="L318">                            .build();</span>
+<span class="nc" id="L319">                    newImages.add(image);</span>
+                }
+<span class="nc" id="L321">            }</span>
+
+            // Lấy tất cả ảnh hiện tại
+<span class="nc" id="L324">            List&lt;Image&gt; existingImages = imageRepository.findByReferenceIdAndReferenceTableAndType(hotel.getId(), &quot;hotels&quot;, ImageType.ROOM);</span>
+
+            // Xác định ảnh cần xóa
+<span class="nc" id="L327">            List&lt;Image&gt; toDelete = existingImages.stream()</span>
+<span class="nc bnc" id="L328" title="All 2 branches missed.">                    .filter(img -&gt; !incomingImageIds.contains(img.getId().toString()))</span>
+<span class="nc" id="L329">                    .collect(Collectors.toList());</span>
+
+            // Xóa ảnh không còn nữa
+<span class="nc" id="L332">            imageRepository.deleteAll(toDelete);</span>
+
+            // Lưu ảnh mới
+<span class="nc" id="L335">            imageRepository.saveAll(newImages);</span>
+        }
+
+
+<span class="fc" id="L339">        hotelRepository.save(hotel);</span>
+<span class="fc" id="L340">    }</span>
+
+    @Override
+    public List&lt;Map&lt;String, Object&gt;&gt; getCombinedChartData() {
+<span class="nc" id="L344">        List&lt;YearMonth&gt; last5Months = IntStream.rangeClosed(0, 4)</span>
+<span class="nc" id="L345">                .mapToObj(i -&gt; YearMonth.now().minusMonths(4 - i))</span>
+<span class="nc" id="L346">                .toList();</span>
+
+<span class="nc" id="L348">        List&lt;Map&lt;String, Object&gt;&gt; result = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L350" title="All 2 branches missed.">        for (YearMonth ym : last5Months) {</span>
+<span class="nc" id="L351">            BigDecimal revenue = calculateRevenueByMonth(ym);</span>
+<span class="nc" id="L352">            BigDecimal profit = revenue.multiply(BigDecimal.valueOf(0.3)); // 30%</span>
+<span class="nc" id="L353">            long bookings = countBookingByMonth(ym);</span>
+
+<span class="nc" id="L355">            Map&lt;String, Object&gt; entry = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L356">            entry.put(&quot;date&quot;, ym.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH) + &quot; &quot; + (ym.getYear() % 100));</span>
+<span class="nc" id="L357">            entry.put(&quot;Revenue&quot;, revenue);</span>
+<span class="nc" id="L358">            entry.put(&quot;Profit&quot;, profit);</span>
+<span class="nc" id="L359">            entry.put(&quot;Bookings&quot;, bookings);</span>
+
+<span class="nc" id="L361">            result.add(entry);</span>
+<span class="nc" id="L362">        }</span>
+
+<span class="nc" id="L364">        return result;</span>
+    }
+
+    @Override
+    public List&lt;Map&lt;String, String&gt;&gt; getTopHotelsByRevenue(int numTop) {
+<span class="nc" id="L369">        List&lt;Booking&gt; bookings = bookingRepository.findByStatus(BookingStatus.CONFIRMED);</span>
+
+<span class="nc" id="L371">        Map&lt;Long, BigDecimal&gt; revenueMap = new HashMap&lt;&gt;();</span>
+
+<span class="nc bnc" id="L373" title="All 2 branches missed.">        for (Booking booking : bookings) {</span>
+<span class="nc" id="L374">            Long hotelId = Long.valueOf(booking.getHotel().getId());</span>
+<span class="nc" id="L375">            long days = ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut());</span>
+<span class="nc" id="L376">            BigDecimal revenue = booking.getPriceTracking().getPrice().multiply(BigDecimal.valueOf(days));</span>
+
+<span class="nc" id="L378">            revenueMap.merge(hotelId, revenue, BigDecimal::add);</span>
+<span class="nc" id="L379">        }</span>
+
+<span class="nc" id="L381">        return revenueMap.entrySet().stream()</span>
+<span class="nc" id="L382">                .sorted(Map.Entry.&lt;Long, BigDecimal&gt;comparingByValue().reversed())</span>
+<span class="nc" id="L383">                .limit(numTop)</span>
+<span class="nc" id="L384">                .map(entry -&gt; {</span>
+<span class="nc" id="L385">                    Hotel hotel = hotelRepository.findById(Math.toIntExact(entry.getKey()))</span>
+<span class="nc" id="L386">                            .orElseThrow(() -&gt; new RuntimeException(&quot;Hotel not found&quot;));</span>
+
+<span class="nc" id="L388">                    Map&lt;String, String&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L389">                    map.put(&quot;hotelId&quot;, String.valueOf(hotel.getId()));</span>
+<span class="nc" id="L390">                    map.put(&quot;hotelName&quot;, hotel.getName());</span>
+<span class="nc" id="L391">                    map.put(&quot;revenue&quot;, entry.getValue().toString());</span>
+<span class="nc" id="L392">                    return map;</span>
+                })
+<span class="nc" id="L394">                .collect(Collectors.toList());</span>
+    }
+
+
+
+
+    @Override
+    public List&lt;Map&lt;String, Object&gt;&gt; dashboardMonthlyBooking() {
+        // Lấy 12 tháng gần nhất (bao gồm tháng hiện tại)
+<span class="nc" id="L403">        List&lt;YearMonth&gt; last12Months = IntStream.rangeClosed(0, 11)</span>
+<span class="nc" id="L404">                .mapToObj(i -&gt; YearMonth.now().minusMonths(11 - i))</span>
+<span class="nc" id="L405">                .toList();</span>
+
+        // Truy vấn toàn bộ bookings trong 12 tháng gần nhất
+<span class="nc" id="L408">        ZonedDateTime fromDate = last12Months.get(0).atDay(1).atStartOfDay(ZoneId.systemDefault());</span>
+<span class="nc" id="L409">        ZonedDateTime toDate = last12Months.get(11).atEndOfMonth().atTime(23, 59).atZone(ZoneId.systemDefault());</span>
+
+<span class="nc" id="L411">        List&lt;Object[]&gt; results = bookingRepository.countBookingsBetweenDates(fromDate, toDate);</span>
+
+        // Dữ liệu trả về
+<span class="nc" id="L414">        List&lt;Map&lt;String, Object&gt;&gt; chartData = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L415" title="All 2 branches missed.">        for (YearMonth ym : last12Months) {</span>
+<span class="nc" id="L416">            Optional&lt;Object[]&gt; match = results.stream()</span>
+<span class="nc" id="L417">                    .filter(obj -&gt; {</span>
+<span class="nc" id="L418">                        int year = ((Integer) obj[0]);</span>
+<span class="nc" id="L419">                        int month = ((Integer) obj[1]);</span>
+<span class="nc bnc" id="L420" title="All 4 branches missed.">                        return ym.getYear() == year &amp;&amp; ym.getMonthValue() == month;</span>
+                    })
+<span class="nc" id="L422">                    .findFirst();</span>
+
+<span class="nc" id="L424">            Long count = match.map(obj -&gt; (Long) obj[2]).orElse(0L);</span>
+
+<span class="nc" id="L426">            chartData.add(Map.of(</span>
+<span class="nc" id="L427">                    &quot;date&quot;, ym.getMonth().getDisplayName(TextStyle.SHORT, Locale.ENGLISH) + &quot; &quot; + ym.getYear(),</span>
+                    &quot;bookings&quot;, count
+            ));
+<span class="nc" id="L430">        }</span>
+
+<span class="nc" id="L432">        return chartData;</span>
+    }
+
+    @Override
+    public Map&lt;String, Integer&gt; hotelByLocation() {
+<span class="nc" id="L437">        List&lt;Location&gt; locations = locationRepository.findAll();</span>
+<span class="nc" id="L438">        Map&lt;String, Integer&gt; hotelByLocation = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L439" title="All 2 branches missed.">        for (Location location : locations) {</span>
+<span class="nc" id="L440">            Integer numOfHotel = location.getHotels().size();</span>
+<span class="nc" id="L441">            hotelByLocation.put(location.getName(), numOfHotel);</span>
+<span class="nc" id="L442">        }</span>
+<span class="nc" id="L443">        return hotelByLocation;</span>
+    }
+
+    @Override
+    public QuickOverview dashboardOverview() {
+<span class="fc" id="L448">        YearMonth currentMonth = YearMonth.now();</span>
+<span class="fc" id="L449">        YearMonth lastMonth = currentMonth.minusMonths(1);</span>
+
+        // Revenue
+<span class="fc" id="L452">        BigDecimal currentRevenue = calculateRevenueByMonth(currentMonth);</span>
+<span class="fc" id="L453">        BigDecimal lastRevenue = calculateRevenueByMonth(lastMonth);</span>
+<span class="fc" id="L454">        int revenueDiff = calculateDiffPercentage(currentRevenue, lastRevenue);</span>
+
+        // Profit (giả sử bạn lấy 30% revenue)
+<span class="fc" id="L457">        BigDecimal currentProfit = currentRevenue.multiply(BigDecimal.valueOf(0.3));</span>
+<span class="fc" id="L458">        BigDecimal lastProfit = lastRevenue.multiply(BigDecimal.valueOf(0.3));</span>
+<span class="fc" id="L459">        int profitDiff = calculateDiffPercentage(currentProfit, lastProfit);</span>
+
+        // Booking count
+<span class="fc" id="L462">        long currentBooking = countBookingByMonth(currentMonth);</span>
+<span class="fc" id="L463">        long lastBooking = countBookingByMonth(lastMonth);</span>
+<span class="fc" id="L464">        int bookingDiff = calculateDiffPercentage(BigDecimal.valueOf(currentBooking), BigDecimal.valueOf(lastBooking));</span>
+
+        // New customers
+<span class="fc" id="L467">        long currentCustomers = countNewCustomersByMonth(currentMonth);</span>
+<span class="fc" id="L468">        long lastCustomers = countNewCustomersByMonth(lastMonth);</span>
+<span class="fc" id="L469">        int customerDiff = calculateDiffPercentage(BigDecimal.valueOf(currentCustomers), BigDecimal.valueOf(lastCustomers));</span>
+
+<span class="fc" id="L471">        return QuickOverview.builder()</span>
+<span class="fc" id="L472">                .revenue(currentRevenue)</span>
+<span class="fc" id="L473">                .revenueDiff(revenueDiff)</span>
+<span class="fc" id="L474">                .profit(currentProfit)</span>
+<span class="fc" id="L475">                .profitDiff(profitDiff)</span>
+<span class="fc" id="L476">                .booking((int) currentBooking)</span>
+<span class="fc" id="L477">                .bookingDiff(bookingDiff)</span>
+<span class="fc" id="L478">                .newCustomer((int) currentCustomers)</span>
+<span class="fc" id="L479">                .newCustomerDiff(customerDiff)</span>
+<span class="fc" id="L480">                .build();</span>
+    }
+
+    public BigDecimal calculateRevenueByMonth(@NotNull YearMonth month) {
+<span class="fc" id="L484">        LocalDate start = month.atDay(1);</span>
+<span class="fc" id="L485">        LocalDate end = month.atEndOfMonth();</span>
+
+<span class="fc" id="L487">        List&lt;Booking&gt; bookings = bookingRepository.findByStatusAndCreateDtBetween(</span>
+                BookingStatus.CONFIRMED,
+<span class="fc" id="L489">                start.atStartOfDay(ZoneId.systemDefault()),</span>
+<span class="fc" id="L490">                end.plusDays(1).atStartOfDay(ZoneId.systemDefault())</span>
+        );
+
+<span class="fc" id="L493">        return bookings.stream()</span>
+<span class="fc" id="L494">                .map(b -&gt; {</span>
+<span class="fc" id="L495">                    long days = ChronoUnit.DAYS.between(b.getCheckIn(), b.getCheckOut());</span>
+<span class="fc" id="L496">                    BigDecimal price = b.getPriceTracking().getPrice();</span>
+<span class="fc" id="L497">                    return price.multiply(BigDecimal.valueOf(days));</span>
+                })
+<span class="fc" id="L499">                .reduce(BigDecimal.ZERO, BigDecimal::add);</span>
+    }
+    public long countBookingByMonth(@NotNull YearMonth month) {
+<span class="fc" id="L502">        LocalDate start = month.atDay(1);</span>
+<span class="fc" id="L503">        LocalDate end = month.atEndOfMonth();</span>
+
+<span class="fc" id="L505">        return bookingRepository.countByStatusAndCreateDtBetween(</span>
+                BookingStatus.CONFIRMED,
+<span class="fc" id="L507">                start.atStartOfDay(ZoneId.systemDefault()),</span>
+<span class="fc" id="L508">                end.plusDays(1).atStartOfDay(ZoneId.systemDefault())</span>
+        );
+    }
+    public long countNewCustomersByMonth(@NotNull YearMonth month) {
+<span class="fc" id="L512">        LocalDate start = month.atDay(1);</span>
+<span class="fc" id="L513">        LocalDate end = month.atEndOfMonth();</span>
+
+<span class="fc" id="L515">        return userRepository.countByCreateDtBetween(</span>
+<span class="fc" id="L516">                start.atStartOfDay(ZoneId.systemDefault()),</span>
+<span class="fc" id="L517">                end.plusDays(1).atStartOfDay(ZoneId.systemDefault())</span>
+        );
+    }
+    private int calculateDiffPercentage(BigDecimal current, @NotNull BigDecimal previous) {
+<span class="pc bpc" id="L521" title="2 of 4 branches missed.">        if (previous.compareTo(BigDecimal.ZERO) == 0) return current.compareTo(BigDecimal.ZERO) == 0 ? 0 : 100;</span>
+<span class="nc" id="L522">        return current.subtract(previous)</span>
+<span class="nc" id="L523">                .multiply(BigDecimal.valueOf(100))</span>
+<span class="nc" id="L524">                .divide(previous, RoundingMode.HALF_UP)</span>
+<span class="nc" id="L525">                .intValue();</span>
+    }
+
+
+
+    @Override
+    public List&lt;Integer&gt; getAllUserFavorite() {
+<span class="pc" id="L532">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(() -&gt; new RuntimeException(&quot;User not found!&quot;));</span>
+<span class="fc" id="L533">        return user.getFavoriteHotels().stream().map(Hotel::getId).collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public HotelResponse getHotelById(Integer id) {
+<span class="fc" id="L538">        Hotel hotel = hotelRepository.findById(id).orElseThrow(()-&gt; new BusinessException(&quot;Hotel id not found&quot;));</span>
+<span class="fc" id="L539">        return convertToHotelResponse(hotel);</span>
+    }
+
+    @Scheduled(cron = &quot;0 0 0 * * ?&quot;) // Chạy lúc 00:00 mỗi ngày
+    public void sendDailyHotelReports() {
+<span class="nc" id="L544">        Role role = roleRepository.findByName(ERole.ROLE_HOTEL).orElseThrow(() -&gt; new RuntimeException(&quot;Role not found!&quot;));</span>
+<span class="nc" id="L545">        List&lt;User&gt; hotelOwners = userRepository.findAllByRoles(Collections.singleton(role)).orElseThrow(()</span>
+<span class="nc" id="L546">                -&gt; new ResourceNotFoundException(&quot;doesnt exist any hotel owner in db&quot;)); // Lấy danh sách tất cả chủ khách sạn</span>
+
+<span class="nc bnc" id="L548" title="All 2 branches missed.">        for (User owner : hotelOwners) {</span>
+<span class="nc" id="L549">            List&lt;Hotel&gt; hotels = hotelRepository.findByOwner(owner);</span>
+
+<span class="nc bnc" id="L551" title="All 2 branches missed.">            if (!hotels.isEmpty()) {</span>
+                // Tạo PDF
+<span class="nc" id="L553">                byte[] pdfData = pdfGeneratorService.generateOwnerHotelReport(owner.getUsername(), hotels);</span>
+
+                // Đặt tên file theo ngày
+<span class="nc" id="L556">                String fileName = &quot;HotelReport_&quot; + LocalDate.now().format(DateTimeFormatter.ofPattern(&quot;yyyyMMdd&quot;)) + &quot;.pdf&quot;;</span>
+
+                // Gửi email
+<span class="nc" id="L559">                emailService.sendEmailWithPdf(owner.getEmail(), &quot;Daily Hotel Report&quot;, &quot;Your daily hotel report is attached.&quot;, pdfData, fileName);</span>
+            }
+<span class="nc" id="L561">        }</span>
+<span class="nc" id="L562">    }</span>
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReviewServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.hotel.service.impl</a> &gt; <span class="el_source">ReviewServiceImpl.java</span></div><h1>ReviewServiceImpl.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.hotel.service.impl;
+
+import com.lenin.hotel.authentication.model.User;
+import com.lenin.hotel.authentication.repository.UserRepository;
+import com.lenin.hotel.common.enumuration.ImageType;
+import com.lenin.hotel.common.exception.BusinessException;
+import com.lenin.hotel.common.exception.ResourceNotFoundException;
+import com.lenin.hotel.hotel.dto.request.ImageRequest;
+import com.lenin.hotel.hotel.model.Hotel;
+import com.lenin.hotel.hotel.model.Image;
+import com.lenin.hotel.hotel.model.Review;
+import com.lenin.hotel.hotel.repository.BookingRepository;
+import com.lenin.hotel.hotel.repository.HotelRepository;
+import com.lenin.hotel.hotel.repository.ImageRepository;
+import com.lenin.hotel.hotel.repository.ReviewRepository;
+import com.lenin.hotel.hotel.dto.request.ReviewRequest;
+import com.lenin.hotel.hotel.dto.response.ReviewResponse;
+import com.lenin.hotel.hotel.dto.response.UserReviewResponse;
+import com.lenin.hotel.hotel.service.IReviewService;
+import jakarta.transaction.Transactional;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+import static com.lenin.hotel.common.utils.SecurityUtils.getCurrentUsername;
+import static com.lenin.hotel.hotel.utils.HotelUtils.buildReviewResponse;
+import static com.lenin.hotel.hotel.utils.ImageUtils.buildImage;
+
+@Service
+@Transactional
+public class ReviewServiceImpl implements IReviewService {
+    private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
+    private final HotelRepository hotelRepository;
+    private final ReviewRepository reviewRepository;
+    private final ImageRepository imageRepository;
+
+<span class="fc" id="L38">    public ReviewServiceImpl(UserRepository userRepository, BookingRepository bookingRepository, HotelRepository hotelRepository, ReviewRepository reviewRepository, ImageRepository imageRepository) {</span>
+<span class="fc" id="L39">        this.userRepository = userRepository;</span>
+<span class="fc" id="L40">        this.bookingRepository = bookingRepository;</span>
+<span class="fc" id="L41">        this.hotelRepository = hotelRepository;</span>
+<span class="fc" id="L42">        this.reviewRepository = reviewRepository;</span>
+<span class="fc" id="L43">        this.imageRepository = imageRepository;</span>
+<span class="fc" id="L44">    }</span>
+
+   @Override
+    public void createReview(ReviewRequest request) {
+<span class="fc" id="L48">        User user = userRepository.getByUsername(getCurrentUsername()).orElseThrow(</span>
+<span class="fc" id="L49">                () -&gt; new ResourceNotFoundException(&quot;User not found!&quot;));</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (!bookingRepository.existsByUserAndHotelId(user, request.getHotelId())) {</span>
+<span class="fc" id="L51">            throw new BusinessException(&quot;You must booking a hotel first, then can leave a comment here!&quot;);</span>
+        }
+<span class="fc" id="L53">        Hotel hotel = hotelRepository.getReferenceById(request.getHotelId());</span>
+<span class="fc" id="L54">        Review review = reviewRepository.save(</span>
+<span class="fc" id="L55">                Review.builder()</span>
+<span class="fc" id="L56">                        .rating(request.getRating())</span>
+<span class="fc" id="L57">                        .content(request.getContent())</span>
+<span class="fc" id="L58">                        .user(user)</span>
+<span class="fc" id="L59">                        .hotel(hotel)</span>
+<span class="fc" id="L60">                        .build()</span>
+        );
+<span class="fc" id="L62">        ImageRequest imageRequest = ImageRequest.builder()</span>
+<span class="fc" id="L63">                .url(request.getImageUrl())</span>
+<span class="fc" id="L64">                .type(ImageType.COMMENT)</span>
+<span class="fc" id="L65">                .build();</span>
+<span class="fc" id="L66">        Image newImage = buildImage(imageRequest, review.getId().intValue(), &quot;reviews&quot;);</span>
+<span class="fc" id="L67">        imageRepository.save(newImage);</span>
+
+        // Handle null values for totalReview and rating
+<span class="fc" id="L70">        Integer totalReviewObj = hotel.getTotalReview();</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        int totalReviews = totalReviewObj != null ? totalReviewObj : 0;</span>
+
+<span class="fc" id="L73">        Double ratingObj = hotel.getRating();</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        double currentRating = ratingObj != null ? ratingObj : 0.0;</span>
+
+<span class="fc" id="L76">        double newRating = (currentRating * totalReviews + request.getRating()) / (totalReviews + 1);</span>
+<span class="fc" id="L77">        hotel.setRating(newRating);</span>
+<span class="fc" id="L78">        hotel.setTotalReview(totalReviews + 1);</span>
+<span class="fc" id="L79">        hotelRepository.save(hotel);</span>
+<span class="fc" id="L80">    }</span>
+
+    @Override
+    public List&lt;ReviewResponse&gt; getReviewByHotel(Integer hotelId) {
+<span class="fc" id="L84">        List&lt;Review&gt; reviews = reviewRepository.findReviewsByHotelId(hotelId);</span>
+<span class="fc" id="L85">        return reviews.stream().map(</span>
+                review -&gt; {
+<span class="fc" id="L87">                    ReviewResponse response = buildReviewResponse(review);</span>
+<span class="fc" id="L88">                    Image imageAvatar = imageRepository.findByReferenceIdAndReferenceTableAndType(Math.toIntExact(review.getUser().getId()), &quot;users&quot;, ImageType.HOTEL).stream().findFirst().orElse(null);</span>
+<span class="fc" id="L89">                    Image imageComment = imageRepository.findByReferenceIdAndReferenceTableAndType(Math.toIntExact(review.getId()), &quot;reviews&quot;, ImageType.COMMENT).stream().findFirst().orElse(null);</span>
+<span class="fc" id="L90">                    response.setUserReview(UserReviewResponse.builder()</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">                            .avatar(imageAvatar != null ? imageAvatar.getUrl() : null)</span>
+<span class="fc" id="L92">                            .username(review.getUser().getUsername())</span>
+<span class="fc" id="L93">                            .build());</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">                    response.setUrl(imageComment != null ? imageComment.getUrl() : null);</span>
+<span class="fc" id="L95">                    return response;</span>
+<span class="fc" id="L96">                }).toList();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

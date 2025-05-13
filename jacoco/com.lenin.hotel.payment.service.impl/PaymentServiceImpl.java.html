@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PaymentServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.payment.service.impl</a> &gt; <span class="el_source">PaymentServiceImpl.java</span></div><h1>PaymentServiceImpl.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.payment.service.impl;
+
+import com.lenin.hotel.common.enumuration.BookingStatus;
+import com.lenin.hotel.common.exception.StripeException.*;
+import com.lenin.hotel.hotel.repository.BookingRepository;
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.model.Event;
+import com.stripe.net.Webhook;
+import jakarta.servlet.http.HttpServletRequest;
+import com.lenin.hotel.hotel.model.Booking;
+import com.lenin.hotel.common.exception.BusinessException;
+import com.lenin.hotel.payment.dto.request.ChargeRequest;
+import com.lenin.hotel.payment.service.IPaymentService;
+import com.stripe.exception.StripeException;
+import com.stripe.model.checkout.Session;
+import com.stripe.param.checkout.SessionCreateParams;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import static com.lenin.hotel.hotel.utils.BookingUtils.calculateTotalBill;
+
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class PaymentServiceImpl implements IPaymentService {
+    @Value(&quot;${STRIPE_PUBLIC_KEY}&quot;)
+    private String stripePublicKey;
+
+    @Value(&quot;${STRIPE_SIGNING_KEY}&quot;)
+    private String stripeSigningKey;
+
+    @Value(&quot;${hotel.frontEnd.host}&quot;)
+    private String frontEndHost;
+
+    private final BookingRepository bookingRepository;
+
+
+    public void processStripeWebhook(HttpServletRequest request) {
+<span class="fc" id="L45">        String payload = readRequestBody(request);</span>
+<span class="fc" id="L46">        String sigHeader = request.getHeader(&quot;Stripe-Signature&quot;);</span>
+
+<span class="pc bpc" id="L48" title="2 of 4 branches missed.">        if (sigHeader == null || sigHeader.isEmpty()) {</span>
+<span class="nc" id="L49">            throw new InvalidSignatureException(&quot;Missing Stripe-Signature header&quot;);</span>
+        }
+
+<span class="fc" id="L52">        Event event = null;</span>
+        try {
+<span class="fc" id="L54">            event = verifyStripeSignature(payload, sigHeader);</span>
+<span class="fc" id="L55">        } catch (InvalidSignatureException e) {</span>
+<span class="fc" id="L56">            throw e;</span>
+<span class="fc" id="L57">        }</span>
+
+<span class="pc bpc" id="L59" title="3 of 6 branches missed.">        if (event != null &amp;&amp; &quot;checkout.session.completed&quot;.equals(event.getType()) &amp;&amp; !handleCheckoutSessionCompleted(event)) {</span>
+<span class="nc" id="L60">            throw new OrderUpdateFailedException(&quot;Failed to update order&quot;);</span>
+        }
+<span class="fc" id="L62">    }</span>
+
+    private String readRequestBody(HttpServletRequest request) {
+        try {
+<span class="fc" id="L66">            return new String(request.getInputStream().readAllBytes(), StandardCharsets.UTF_8);</span>
+<span class="fc" id="L67">        } catch (IOException e) {</span>
+<span class="fc" id="L68">            throw new InvalidPayloadException(&quot;Error reading webhook payload&quot;, e);</span>
+        }
+    }
+
+    private Event verifyStripeSignature(String payload, String sigHeader) {
+        try {
+<span class="fc" id="L74">            return Webhook.constructEvent(payload, sigHeader, stripeSigningKey);</span>
+<span class="fc" id="L75">        } catch (SignatureVerificationException e) {</span>
+<span class="fc" id="L76">            throw new InvalidSignatureException(&quot;Invalid Stripe signature&quot;, e);</span>
+        }
+    }
+
+    private boolean handleCheckoutSessionCompleted(Event event) {
+<span class="fc" id="L81">        return event.getDataObjectDeserializer().getObject()</span>
+<span class="fc" id="L82">                .filter(Session.class::isInstance)</span>
+<span class="fc" id="L83">                .map(Session.class::cast)</span>
+<span class="fc" id="L84">                .map(session -&gt; session.getMetadata().get(&quot;order_id&quot;))</span>
+<span class="fc" id="L85">                .map(this::parseOrderId)</span>
+<span class="fc" id="L86">                .map(this::updateOrderStatus)</span>
+<span class="fc" id="L87">                .orElse(false);</span>
+    }
+
+    private Integer parseOrderId(String orderIdStr) {
+        try {
+<span class="fc" id="L92">            return Integer.parseInt(orderIdStr);</span>
+<span class="nc" id="L93">        } catch (NumberFormatException e) {</span>
+<span class="nc" id="L94">            return null;</span>
+        }
+    }
+
+    private boolean updateOrderStatus(Integer orderId) {
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        return orderId != null &amp;&amp; bookingRepository.findById(orderId)</span>
+<span class="fc" id="L100">                .map(order -&gt; {</span>
+<span class="fc" id="L101">                    order.setStatus(BookingStatus.CONFIRMED);</span>
+<span class="fc" id="L102">                    bookingRepository.save(order);</span>
+<span class="fc" id="L103">                    return true;</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">                }).orElse(false);</span>
+    }
+
+    @Override
+    public String createPayment(Booking booking) {
+        try {
+<span class="fc" id="L110">           Long amount = calculateTotalBill(booking);</span>
+<span class="fc" id="L111">            String currency = ChargeRequest.Currency.USD.toString();</span>
+
+<span class="fc" id="L113">            String successUrl = frontEndHost + &quot;/payment/success&quot;;</span>
+<span class="fc" id="L114">            String cancelUrl = frontEndHost + &quot;/payment/cancel&quot;;</span>
+
+            SessionCreateParams params =
+<span class="fc" id="L117">                    SessionCreateParams.builder()</span>
+<span class="fc" id="L118">                            .setMode(SessionCreateParams.Mode.PAYMENT)</span>
+<span class="fc" id="L119">                            .setSuccessUrl(successUrl)</span>
+<span class="fc" id="L120">                            .setCancelUrl(cancelUrl)</span>
+<span class="fc" id="L121">                            .putMetadata(&quot;order_id&quot;, booking.getId().toString())</span>
+<span class="fc" id="L122">                            .addLineItem(</span>
+<span class="fc" id="L123">                                    SessionCreateParams.LineItem.builder()</span>
+<span class="fc" id="L124">                                            .setQuantity(1L)</span>
+<span class="fc" id="L125">                                            .setPriceData(</span>
+<span class="fc" id="L126">                                                    SessionCreateParams.LineItem.PriceData.builder()</span>
+<span class="fc" id="L127">                                                            .setCurrency(currency)</span>
+<span class="fc" id="L128">                                                            .setUnitAmount(amount)</span>
+<span class="fc" id="L129">                                                            .setProductData(</span>
+<span class="fc" id="L130">                                                                    SessionCreateParams.LineItem.PriceData.ProductData.builder()</span>
+<span class="fc" id="L131">                                                                            .setName(&quot;Hotel Booking Payment&quot;)</span>
+<span class="fc" id="L132">                                                                            .build()</span>
+                                                            )
+<span class="fc" id="L134">                                                            .build()</span>
+                                            )
+<span class="fc" id="L136">                                            .build()</span>
+                            )
+<span class="fc" id="L138">                            .build();</span>
+
+<span class="fc" id="L140">            Session session = Session.create(params);</span>
+
+<span class="fc" id="L142">            return session.getUrl();</span>
+<span class="nc" id="L143">        } catch (StripeException e) {</span>
+<span class="nc" id="L144">            throw new BusinessException(&quot;Error while create payment process, please try again&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

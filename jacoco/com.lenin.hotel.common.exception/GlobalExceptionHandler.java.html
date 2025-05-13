@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GlobalExceptionHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.common.exception</a> &gt; <span class="el_source">GlobalExceptionHandler.java</span></div><h1>GlobalExceptionHandler.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.common.exception;
+
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.lenin.hotel.authentication.advice.ErrorMessage;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestControllerAdvice
+<span class="fc" id="L25">public class GlobalExceptionHandler {</span>
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleValidationException(MethodArgumentNotValidException ex) {
+<span class="nc" id="L28">        Map&lt;String, String&gt; errors = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L29">        ex.getBindingResult().getAllErrors().forEach((error) -&gt; {</span>
+<span class="nc" id="L30">            String fieldName = ((FieldError) error).getField();</span>
+<span class="nc" id="L31">            String errorMessage = error.getDefaultMessage();</span>
+<span class="nc" id="L32">            errors.put(fieldName, errorMessage);</span>
+<span class="nc" id="L33">        });</span>
+<span class="nc" id="L34">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);</span>
+    }
+
+    @ExceptionHandler(value = TokenRefreshException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorMessage handleTokenRefreshException(TokenRefreshException ex, WebRequest request) {
+<span class="nc" id="L40">        return new ErrorMessage(</span>
+<span class="nc" id="L41">                HttpStatus.FORBIDDEN.value(),</span>
+                new Date(),
+<span class="nc" id="L43">                ex.getMessage(),</span>
+<span class="nc" id="L44">                request.getDescription(false));</span>
+    }
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleRuntimeException(RuntimeException ex) {
+<span class="fc" id="L48">        return ResponseEntity</span>
+<span class="fc" id="L49">                .status(HttpStatus.BAD_REQUEST)</span>
+<span class="fc" id="L50">                .body(Map.of(&quot;message&quot;, ex.getMessage()));</span>
+    }
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleResourceNotFoundException(ResourceNotFoundException ex) {
+<span class="nc" id="L54">        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(&quot;message&quot;, ex.getMessage()));</span>
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleBusinessException(BusinessException ex) {
+<span class="fc" id="L59">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(&quot;message&quot;, ex.getMessage()));</span>
+    }
+
+    // Common error when executing SQL queries (e.g., Constraint Violation, Duplicate Key)
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity&lt;?&gt; handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+<span class="nc" id="L65">        return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L66">                .body(Map.of(&quot;message&quot;, &quot;Invalid data or duplicate entry.&quot;));</span>
+    }
+
+    // Error when a parameter is NULL or has an incorrect data type (e.g., NOT NULL constraint)
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity&lt;?&gt; handleConstraintViolation(ConstraintViolationException ex) {
+<span class="nc" id="L72">        return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L73">                .body(Map.of(&quot;message&quot;, &quot;Invalid input data.&quot;));</span>
+    }
+
+    // Error when data is not found (e.g., findById but no data exists)
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity&lt;?&gt; handleEntityNotFound(EntityNotFoundException ex) {
+<span class="nc" id="L79">        return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="nc" id="L80">                .body(Map.of(&quot;message&quot;, &quot;Data not found.&quot;));</span>
+    }
+
+    // General error for all other database-related exceptions
+    @ExceptionHandler(SQLException.class)
+    public ResponseEntity&lt;?&gt; handleSQLException(SQLException ex) {
+<span class="nc" id="L86">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="nc" id="L87">                .body(Map.of(&quot;message&quot;, &quot;System error. Please try again later.&quot;));</span>
+    }
+
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleJsonParseException(HttpMessageNotReadableException ex) {
+<span class="nc" id="L93">        Throwable rootCause = ex.getRootCause();</span>
+
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (rootCause instanceof InvalidFormatException) {</span>
+<span class="nc" id="L96">            return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L97">                    .body(Map.of(&quot;message&quot;, &quot;Invalid date format. Please use ISO-8601 format like 'yyyy-MM-dd'T'HH:mm:ssX'&quot;));</span>
+        }
+
+<span class="nc" id="L100">        return ResponseEntity.status(HttpStatus.BAD_REQUEST)</span>
+<span class="nc" id="L101">                .body(Map.of(&quot;message&quot;, &quot;Malformed JSON request&quot;));</span>
+    }
+
+    @ExceptionHandler(StripeException.InvalidSignatureException.class)
+    public ResponseEntity&lt;String&gt; handleInvalidSignatureException(StripeException.InvalidSignatureException ex) {
+<span class="nc" id="L106">        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(StripeException.InvalidPayloadException.class)
+    public ResponseEntity&lt;String&gt; handleInvalidPayloadException(StripeException.InvalidPayloadException ex) {
+<span class="nc" id="L111">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(StripeException.OrderUpdateFailedException.class)
+    public ResponseEntity&lt;String&gt; handleOrderUpdateFailedException(StripeException.OrderUpdateFailedException ex) {
+<span class="nc" id="L116">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;String&gt; handleGenericException(Exception ex) {
+<span class="nc" id="L121">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(&quot;Internal Server Error&quot;);</span>
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+<span class="nc" id="L126">        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(&quot;message&quot;, &quot;Invalid date-time format! Please use the format: yyyy-MM-dd'T'HH:mm:ssX&quot;));</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

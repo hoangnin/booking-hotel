@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmailTemplateUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.common.utils</a> &gt; <span class="el_source">EmailTemplateUtils.java</span></div><h1>EmailTemplateUtils.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.common.utils;
+
+
+
+import com.lenin.hotel.hotel.model.Booking;
+
+<span class="nc" id="L7">public class EmailTemplateUtils {</span>
+    public static String bookingSuccessEmail(Booking booking) {
+<span class="fc" id="L9">        return String.format(</span>
+                &quot;Subject: 🏨 Booking Confirmation - %s\n\n&quot; +
+                        &quot;Dear %s,\n\n&quot; +
+                        &quot;We are pleased to confirm your booking at **%s**!\n\n&quot; +
+                        &quot;📅 Check-in Date: %s\n&quot; +
+                        &quot;📅 Check-out Date: %s\n\n&quot; +
+                        &quot;Booking Details:\n&quot; +
+                        &quot;- Booking ID: #%d\n&quot; +
+                        &quot;- Status: %s\n&quot; +
+                        &quot;- Special Notes: %s\n\n&quot; +
+                        &quot;📍 Hotel Location: %s\n\n&quot; +
+                        &quot;💰 Price Tracking Reference: %s\n\n&quot; +
+                        &quot;Thank you for choosing Vinova for your stay! If you have any questions, feel free to contact us.\n\n&quot; +
+                        &quot;Best regards,\n&quot; +
+                        &quot;Vinova Team\n&quot;,
+<span class="fc" id="L24">                booking.getHotel().getName(),  // Subject includes hotel name</span>
+<span class="fc" id="L25">                booking.getUser().getUsername(),  // Greeting</span>
+<span class="fc" id="L26">                booking.getHotel().getName(),  // Hotel Name</span>
+<span class="fc" id="L27">                booking.getCheckIn().toLocalDate(),  // Check-in Date</span>
+<span class="fc" id="L28">                booking.getCheckOut().toLocalDate(),  // Check-out Date</span>
+<span class="fc" id="L29">                booking.getId(),  // Booking ID</span>
+<span class="fc" id="L30">                booking.getStatus(),  // Booking Status</span>
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">                booking.getNote() != null ? booking.getNote() : &quot;N/A&quot;,  // Special Notes (if any)</span>
+<span class="fc" id="L32">                booking.getHotel().getAddress(),  // Hotel Location (Assuming Hotel has `getLocation()`)</span>
+<span class="fc" id="L33">                booking.getPriceTracking().getId()  // Price Tracking Reference</span>
+        );
+    }
+
+    public static String signupSuccessEmail(String username) {
+<span class="nc" id="L38">        return String.format(</span>
+                &quot;Subject: 🎉 Welcome to Vinova, %s!\n\n&quot; +
+                        &quot;Hello %s,\n\n&quot; +
+                        &quot;We're thrilled to have you join Vinova! Your account has been successfully created, and you're now part of our community.\n\n&quot; +
+                        &quot;---\n\n&quot; +
+                        &quot;Account Details:\n&quot; +
+                        &quot;- Username: %s\n&quot; +
+                        &quot;- Email: %s\n\n&quot; +
+                        &quot;What’s next?\n\n&quot; +
+                        &quot;✅ Explore our products and enjoy exclusive member benefits.\n&quot; +
+                        &quot;✅ Manage your orders and preferences in your account dashboard.\n&quot; +
+                        &quot;✅ Stay updated with the latest deals and promotions.\n\n&quot; +
+                        &quot;If you have any questions or need assistance, feel free to contact us at [gillkaijame@gmail.com].\n\n&quot; +
+                        &quot;Thank you for choosing Vinova! We look forward to serving you.\n\n&quot; +
+                        &quot;Best regards,\n&quot; +
+                        &quot;Vinova Team\n&quot;,
+                username,username,username,username
+        );
+    }
+    public static String forgotPasswordEmail(String username, String email, String frontEndHost, String frontEndForgotPasswordPath, String token) {
+<span class="fc" id="L58">        return String.format(</span>
+                &quot;Subject: 🔒 Reset Your Password - Vinova\n\n&quot; +
+                        &quot;Hello %s,\n\n&quot; +
+                        &quot;We received a request to reset your password for your Vinova account associated with %s.\n\n&quot; +
+                        &quot;To reset your password, please click the link below:\n\n&quot; +
+                        &quot;🔗 %s/%s?token=%s\n\n&quot; +
+                        &quot;This link is valid for a limited time. If you did not request a password reset, please ignore this email.\n\n&quot; +
+                        &quot;For security reasons, never share your password with anyone.\n\n&quot; +
+                        &quot;If you need further assistance, feel free to contact us at [gillkaijame@gmail.com].\n\n&quot; +
+                        &quot;Best regards,\n&quot; +
+                        &quot;Vinova Team\n&quot;,
+                username, email, frontEndHost, frontEndForgotPasswordPath, token
+        );
+    }
+
+    public static String activeAccountEmail(String username, String frontEndHost, String frontEndActivationPath, String token) {
+<span class="fc" id="L74">        return String.format(</span>
+                &quot;Subject: 🎉 Activate Your Account - Vinova\n\n&quot; +
+                        &quot;Hello %s,\n\n&quot; +
+                        &quot;Thank you for registering an account with Vinova!\n\n&quot; +
+                        &quot;To activate your account, please click the link below:\n\n&quot; +
+                        &quot;🔗 %s/%s?token=%s\n\n&quot; +
+                        &quot;If you did not sign up for a Vinova account, please ignore this email.\n\n&quot; +
+                        &quot;For security reasons, never share your activation link with anyone.\n\n&quot; +
+                        &quot;If you need further assistance, feel free to contact us at [gillkaijame@gmail.com].\n\n&quot; +
+                        &quot;Best regards,\n&quot; +
+                        &quot;Vinova Team\n&quot;,
+                username, frontEndHost, frontEndActivationPath, token
+        );
+    }
+
+
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

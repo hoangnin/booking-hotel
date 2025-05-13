@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PdfGeneratorService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.common.service</a> &gt; <span class="el_source">PdfGeneratorService.java</span></div><h1>PdfGeneratorService.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.common.service;
+
+
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Image;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.UnitValue;
+import com.lenin.hotel.hotel.model.Hotel;
+import com.lenin.hotel.hotel.model.Booking;
+import org.springframework.stereotype.Service;
+import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+@Service
+<span class="fc" id="L21">public class PdfGeneratorService {</span>
+
+    // 🏨 Báo cáo dành cho chủ khách sạn (Không có biểu đồ)
+    public byte[] generateOwnerHotelReport(String ownerName, List&lt;Hotel&gt; hotels) {
+<span class="nc" id="L25">        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
+<span class="nc" id="L26">        try (PdfWriter writer = new PdfWriter(outputStream);</span>
+<span class="nc" id="L27">             PdfDocument pdfDoc = new PdfDocument(writer);</span>
+<span class="nc" id="L28">             Document document = new Document(pdfDoc)) {</span>
+
+<span class="nc" id="L30">            document.add(new Paragraph(&quot;Hotel Report for: &quot; + ownerName)</span>
+<span class="nc" id="L31">                    .setBold().setFontSize(16));</span>
+<span class="nc" id="L32">            document.add(new Paragraph(&quot;\n&quot;));</span>
+
+<span class="nc" id="L34">            double[] totalRevenueAllHotels = {0.0}; // Dùng mảng để giữ giá trị cập nhật</span>
+
+<span class="nc bnc" id="L36" title="All 2 branches missed.">            for (Hotel hotel : hotels) {</span>
+<span class="nc" id="L37">                document.add(new Paragraph(&quot;Hotel: &quot; + hotel.getName())</span>
+<span class="nc" id="L38">                        .setBold().setFontSize(14));</span>
+<span class="nc" id="L39">                document.add(new Paragraph(&quot;Location: &quot; + hotel.getLocation().getName()));</span>
+<span class="nc" id="L40">                document.add(new Paragraph(&quot;\n&quot;));</span>
+
+<span class="nc" id="L42">                Table table = createBookingTable(hotel, totalRevenueAllHotels);</span>
+<span class="nc" id="L43">                document.add(table);</span>
+<span class="nc" id="L44">                document.add(new Paragraph(&quot;\n&quot;));</span>
+<span class="nc" id="L45">            }</span>
+
+<span class="nc" id="L47">            document.add(new Paragraph(&quot;Total Revenue for All Hotels: &quot; + String.format(&quot;$%.2f&quot;, totalRevenueAllHotels[0]))</span>
+<span class="nc" id="L48">                    .setBold().setFontSize(14));</span>
+
+
+<span class="nc" id="L51">        } catch (Exception e) {</span>
+<span class="nc" id="L52">            throw new RuntimeException(&quot;Error while generating PDF&quot;, e);</span>
+<span class="nc" id="L53">        }</span>
+<span class="nc" id="L54">        return outputStream.toByteArray();</span>
+    }
+
+    // 📊 Báo cáo dành cho Admin (Có biểu đồ)
+    public byte[] generateAdminHotelReport(List&lt;Hotel&gt; hotels) {
+<span class="fc" id="L59">        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();</span>
+<span class="fc" id="L60">        try (PdfWriter writer = new PdfWriter(outputStream);</span>
+<span class="fc" id="L61">             PdfDocument pdfDoc = new PdfDocument(writer);</span>
+<span class="fc" id="L62">             Document document = new Document(pdfDoc)) {</span>
+
+<span class="fc" id="L64">            document.add(new Paragraph(&quot;Admin Hotel Revenue Report&quot;)</span>
+<span class="fc" id="L65">                    .setBold().setFontSize(16));</span>
+<span class="fc" id="L66">            document.add(new Paragraph(&quot;\n&quot;));</span>
+
+<span class="fc" id="L68">            double[] totalRevenueAllHotels = {0.0}; // Dùng mảng để giữ giá trị cập nhật</span>
+
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            for (Hotel hotel : hotels) {</span>
+<span class="fc" id="L71">                document.add(new Paragraph(&quot;Hotel: &quot; + hotel.getName())</span>
+<span class="fc" id="L72">                        .setBold().setFontSize(14));</span>
+<span class="fc" id="L73">                document.add(new Paragraph(&quot;Location: &quot; + hotel.getLocation().getName()));</span>
+<span class="fc" id="L74">                document.add(new Paragraph(&quot;\n&quot;));</span>
+
+<span class="fc" id="L76">                Table table = createBookingTable(hotel, totalRevenueAllHotels);</span>
+<span class="fc" id="L77">                document.add(table);</span>
+<span class="fc" id="L78">                document.add(new Paragraph(&quot;\n&quot;));</span>
+<span class="fc" id="L79">            }</span>
+
+<span class="fc" id="L81">            document.add(new Paragraph(&quot;Total Revenue for All Hotels: &quot; + String.format(&quot;$%.2f&quot;, totalRevenueAllHotels[0]))</span>
+<span class="fc" id="L82">                    .setBold().setFontSize(14));</span>
+
+
+            // 🛠️ Thêm biểu đồ doanh thu
+<span class="fc" id="L86">            byte[] chartImage = ChartGenerator.createRevenueChart(hotels);</span>
+<span class="fc" id="L87">            Image img = new Image(com.itextpdf.io.image.ImageDataFactory.create(chartImage));</span>
+<span class="fc" id="L88">            document.add(img);</span>
+
+<span class="nc" id="L90">        } catch (Exception e) {</span>
+<span class="nc" id="L91">            throw new RuntimeException(&quot;Error while generating PDF&quot;, e);</span>
+<span class="fc" id="L92">        }</span>
+<span class="fc" id="L93">        return outputStream.toByteArray();</span>
+    }
+
+    private Table createBookingTable(Hotel hotel, double[] totalHotelRevenue) {
+<span class="fc" id="L97">        Table table = new Table(UnitValue.createPercentArray(new float[]{2, 2, 2, 2, 2})).useAllAvailableWidth();</span>
+<span class="fc" id="L98">        table.addHeaderCell(&quot;Booking ID&quot;);</span>
+<span class="fc" id="L99">        table.addHeaderCell(&quot;Customer Name&quot;);</span>
+<span class="fc" id="L100">        table.addHeaderCell(&quot;Check-in&quot;);</span>
+<span class="fc" id="L101">        table.addHeaderCell(&quot;Check-out&quot;);</span>
+<span class="fc" id="L102">        table.addHeaderCell(&quot;Price&quot;);</span>
+
+<span class="fc" id="L104">        double revenue = 0.0;</span>
+
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        for (Booking booking : hotel.getBookings()) {</span>
+<span class="fc" id="L107">            table.addCell(String.valueOf(booking.getId()));</span>
+<span class="fc" id="L108">            table.addCell(booking.getUser().getUsername());</span>
+<span class="fc" id="L109">            table.addCell(booking.getCheckIn().toString());</span>
+<span class="fc" id="L110">            table.addCell(booking.getCheckOut().toString());</span>
+<span class="fc" id="L111">            table.addCell(String.format(&quot;$%.2f&quot;, booking.getPriceTracking().getPrice()));</span>
+
+<span class="fc" id="L113">            revenue += booking.getPriceTracking().getPrice().doubleValue();</span>
+<span class="fc" id="L114">        }</span>
+
+<span class="fc" id="L116">        table.addCell(new Cell(1, 4).add(new Paragraph(&quot;Total Revenue:&quot;)).setBold());</span>
+<span class="fc" id="L117">        table.addCell(new Cell().add(new Paragraph(String.format(&quot;$%.2f&quot;, revenue))).setBold());</span>
+
+<span class="fc" id="L119">        totalHotelRevenue[0] += revenue; // Cập nhật tổng doanh thu</span>
+<span class="fc" id="L120">        return table;</span>
+    }
+
+
+    public String generatePdfFileName() {
+<span class="fc" id="L125">        LocalDate today = LocalDate.now();</span>
+<span class="fc" id="L126">        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(&quot;yyyyMMdd&quot;);</span>
+<span class="fc" id="L127">        return &quot;HotelReport_&quot; + today.format(formatter) + &quot;.pdf&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

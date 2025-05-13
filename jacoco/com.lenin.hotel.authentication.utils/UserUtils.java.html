@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.authentication.utils</a> &gt; <span class="el_source">UserUtils.java</span></div><h1>UserUtils.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.authentication.utils;
+
+import com.lenin.hotel.authentication.model.User;
+import com.lenin.hotel.common.enumuration.ImageType;
+import com.lenin.hotel.hotel.dto.response.UserResponse;
+import com.lenin.hotel.hotel.model.Image;
+import com.lenin.hotel.hotel.repository.ImageRepository;
+import org.springframework.util.StringUtils;
+
+<span class="nc" id="L10">public class UserUtils {</span>
+
+//    // Hàm buildUserResponse không thay đổi (dành cho các nơi gọi cũ)
+//    public static UserResponse buildUserResponse(User user) {
+//        return buildUserResponse(user, null); // Truyền null nếu không cần avatar
+//    }
+
+    // Hàm buildUserResponse với tham số imageRepository (dùng khi cần xử lý avatar)
+    public static UserResponse buildUserResponse(User user, ImageRepository imageRepository) {
+        // Lấy avatar nếu có ImageRepository
+<span class="fc" id="L20">        String avatarUrl = null;</span>
+<span class="pc bpc" id="L21" title="1 of 2 branches missed.">        if (imageRepository != null) {</span>
+<span class="fc" id="L22">            avatarUrl = imageRepository</span>
+<span class="fc" id="L23">                    .findByReferenceIdAndReferenceTableAndType(user.getId().intValue(), &quot;users&quot;, ImageType.HOTEL)</span>
+<span class="fc" id="L24">                    .stream()</span>
+<span class="fc" id="L25">                    .findFirst()</span>
+<span class="fc" id="L26">                    .map(Image::getUrl)</span>
+<span class="fc" id="L27">                    .orElse(null);</span>
+        }
+
+        // Xây dựng UserResponse
+<span class="fc" id="L31">        return UserResponse.builder()</span>
+<span class="fc" id="L32">                .phone(user.getPhoneNumber())</span>
+<span class="fc" id="L33">                .email(user.getEmail())</span>
+<span class="fc" id="L34">                .username(user.getUsername())</span>
+<span class="fc" id="L35">                .id(user.getId())</span>
+<span class="fc" id="L36">                .address(user.getAddress())</span>
+<span class="fc" id="L37">                .roles(user.getRoles())</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">                .active(!StringUtils.hasText(user.getBanReason()))</span>
+<span class="fc" id="L39">                .avatarUrl(avatarUrl) // Set avatarUrl</span>
+<span class="fc" id="L40">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

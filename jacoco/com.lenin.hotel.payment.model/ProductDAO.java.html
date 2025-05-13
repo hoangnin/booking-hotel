@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProductDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.payment.model</a> &gt; <span class="el_source">ProductDAO.java</span></div><h1>ProductDAO.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.payment.model;
+
+import com.stripe.model.Price;
+import com.stripe.model.Product;
+
+import java.math.BigDecimal;
+
+<span class="nc" id="L8">public class ProductDAO {</span>
+
+    static Product[] products;
+
+    static {
+<span class="nc" id="L13">        products = new Product[4];</span>
+
+<span class="nc" id="L15">        Product sampleProduct = new Product();</span>
+<span class="nc" id="L16">        Price samplePrice = new Price();</span>
+
+<span class="nc" id="L18">        sampleProduct.setName(&quot;Puma Shoes&quot;);</span>
+<span class="nc" id="L19">        sampleProduct.setId(&quot;shoe&quot;);</span>
+<span class="nc" id="L20">        samplePrice.setCurrency(&quot;usd&quot;);</span>
+<span class="nc" id="L21">        samplePrice.setUnitAmountDecimal(BigDecimal.valueOf(2000));</span>
+<span class="nc" id="L22">        sampleProduct.setDefaultPriceObject(samplePrice);</span>
+<span class="nc" id="L23">        products[0] = sampleProduct;</span>
+
+<span class="nc" id="L25">        sampleProduct = new Product();</span>
+<span class="nc" id="L26">        samplePrice = new Price();</span>
+
+<span class="nc" id="L28">        sampleProduct.setName(&quot;Nike Sliders&quot;);</span>
+<span class="nc" id="L29">        sampleProduct.setId(&quot;slippers&quot;);</span>
+<span class="nc" id="L30">        samplePrice.setCurrency(&quot;usd&quot;);</span>
+<span class="nc" id="L31">        samplePrice.setUnitAmountDecimal(BigDecimal.valueOf(1000));</span>
+<span class="nc" id="L32">        sampleProduct.setDefaultPriceObject(samplePrice);</span>
+<span class="nc" id="L33">        products[1] = sampleProduct;</span>
+
+<span class="nc" id="L35">        sampleProduct = new Product();</span>
+<span class="nc" id="L36">        samplePrice = new Price();</span>
+
+<span class="nc" id="L38">        sampleProduct.setName(&quot;Apple Music+&quot;);</span>
+<span class="nc" id="L39">        sampleProduct.setId(&quot;music&quot;);</span>
+<span class="nc" id="L40">        samplePrice.setCurrency(&quot;usd&quot;);</span>
+<span class="nc" id="L41">        samplePrice.setUnitAmountDecimal(BigDecimal.valueOf(499));</span>
+<span class="nc" id="L42">        sampleProduct.setDefaultPriceObject(samplePrice);</span>
+<span class="nc" id="L43">        products[2] = sampleProduct;</span>
+
+<span class="nc" id="L45">    }</span>
+
+    public static Product getProduct(String id) {
+
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (&quot;shoe&quot;.equals(id)) {</span>
+<span class="nc" id="L50">            return products[0];</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        } else if (&quot;slippers&quot;.equals(id)) {</span>
+<span class="nc" id="L52">            return products[1];</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        } else if (&quot;music&quot;.equals(id)) {</span>
+<span class="nc" id="L54">            return products[2];</span>
+<span class="nc" id="L55">        } else return new Product();</span>
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

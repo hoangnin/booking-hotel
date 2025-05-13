@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebSecurityConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.authentication.security</a> &gt; <span class="el_source">WebSecurityConfig.java</span></div><h1>WebSecurityConfig.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.authentication.security;
+
+import lombok.AllArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.oauth2.client.OAuth2LoginConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+import java.util.List;
+
+@Configuration
+@AllArgsConstructor
+public class WebSecurityConfig {
+    private final CustomUserDetailsService userDetailsService;
+    private final AuthEntryPointJwt unauthorizedHandler;
+    private final CustomOAuth2SuccessHandler customOAuth2SuccessHandler;
+    private final CustomOAuth2FailureHandler customOAuth2FailureHandler;
+    @Bean
+    public AuthTokenFilter authenticationJwtTokenFilter() {
+<span class="fc" id="L31">        return new AuthTokenFilter();</span>
+    }
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration
+    ) throws Exception {
+<span class="fc" id="L37">        return authenticationConfiguration.getAuthenticationManager();</span>
+    }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+<span class="fc" id="L41">        return new BCryptPasswordEncoder();</span>
+    }
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+<span class="fc" id="L45">        http</span>
+<span class="fc" id="L46">                .csrf(csrf -&gt; csrf.disable())</span>
+<span class="fc" id="L47">                .cors(cors -&gt; cors.configurationSource(corsConfigurationSource()))</span>
+<span class="fc" id="L48">                .exceptionHandling(exceptionHandling -&gt;</span>
+<span class="fc" id="L49">                        exceptionHandling.authenticationEntryPoint(unauthorizedHandler)</span>
+                )
+<span class="fc" id="L51">                .sessionManagement(sessionManagement -&gt;</span>
+<span class="fc" id="L52">                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)</span>
+                )
+<span class="fc" id="L54">                .authorizeHttpRequests(auth -&gt; auth</span>
+<span class="fc" id="L55">                        .requestMatchers(&quot;/api/auth/**&quot;, &quot;/oauth2/**&quot;, &quot;/api/public/**&quot;).permitAll()</span>
+<span class="fc" id="L56">                        .requestMatchers(&quot;/api/user/**&quot;).hasRole(&quot;USER&quot;)</span>
+<span class="fc" id="L57">                        .requestMatchers(&quot;/api/admin/**&quot;).hasRole(&quot;ADMIN&quot;)</span>
+<span class="fc" id="L58">                        .requestMatchers(&quot;/api/hotelOwner/**&quot;).hasRole(&quot;HOTEL&quot;)</span>
+<span class="fc" id="L59">                        .anyRequest().authenticated()</span>
+                )
+<span class="fc" id="L61">                .with(new OAuth2LoginConfigurer&lt;&gt;(), oauth2 -&gt;</span>
+<span class="fc" id="L62">                        oauth2.successHandler(customOAuth2SuccessHandler)</span>
+<span class="fc" id="L63">                                .failureHandler(customOAuth2FailureHandler)</span>
+                )
+<span class="fc" id="L65">                .logout(logout -&gt; logout</span>
+<span class="fc" id="L66">                        .logoutUrl(&quot;/api/auth/logout&quot;)</span>
+<span class="fc" id="L67">                        .logoutSuccessHandler((request, response, authentication) -&gt; {</span>
+<span class="nc" id="L68">                            response.setStatus(200);</span>
+<span class="nc" id="L69">                            response.getWriter().write(&quot;{\&quot;message\&quot;: \&quot;Logout successful\&quot;}&quot;);</span>
+<span class="nc" id="L70">                            response.getWriter().flush();</span>
+<span class="nc" id="L71">                        })</span>
+                );
+
+<span class="fc" id="L74">        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);</span>
+
+<span class="fc" id="L76">        return http.build();</span>
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+<span class="fc" id="L81">        CorsConfiguration configuration = new CorsConfiguration();</span>
+<span class="fc" id="L82">        configuration.setAllowedOrigins(List.of(</span>
+                &quot;http://localhost:5173&quot;,
+                &quot;https://booking-hotel-fe-one.vercel.app&quot;
+        )); // Cho phép frontend gọi API
+<span class="fc" id="L86">        configuration.addAllowedMethod(&quot;*&quot;); // Cho phép tất cả các method (GET, POST, PUT, DELETE,...)</span>
+<span class="fc" id="L87">        configuration.addAllowedHeader(&quot;*&quot;); // Cho phép tất cả các headers</span>
+<span class="fc" id="L88">        configuration.setAllowCredentials(true); // Hỗ trợ gửi token/cookie</span>
+
+<span class="fc" id="L90">        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();</span>
+<span class="fc" id="L91">        source.registerCorsConfiguration(&quot;/**&quot;, configuration); // Áp dụng cho tất cả các endpoints</span>
+<span class="fc" id="L92">        return source;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

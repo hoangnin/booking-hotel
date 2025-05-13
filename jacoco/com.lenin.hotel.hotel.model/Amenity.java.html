@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Amenity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.hotel.model</a> &gt; <span class="el_source">Amenity.java</span></div><h1>Amenity.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.hotel.model;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Data
+@Builder
+@AllArgsConstructor
+@Table(name = &quot;Amenities&quot;)
+public class Amenity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(nullable = false, unique = true)
+    private String name;
+
+<span class="fc" id="L29">    @Column(nullable = false)</span>
+<span class="fc" id="L30">    private Boolean available = true;</span>
+
+<span class="fc" id="L32">    @ManyToMany(mappedBy = &quot;amenities&quot;)</span>
+    private List&lt;Hotel&gt; hotels = new ArrayList&lt;&gt;();
+
+    @Column(name = &quot;create_dt&quot;)
+    @CreationTimestamp
+    private ZonedDateTime createDt;
+
+    @Column(name = &quot;update_dt&quot;)
+    @UpdateTimestamp
+    private ZonedDateTime updateDt;
+
+<span class="fc" id="L43">    public Amenity() {</span>
+
+<span class="fc" id="L45">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HotelController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.hotel.controller</a> &gt; <span class="el_source">HotelController.java</span></div><h1>HotelController.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.hotel.controller;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.lenin.hotel.authentication.service.IUserService;
+import com.lenin.hotel.hotel.dto.request.ChangePriceRequest;
+import com.lenin.hotel.hotel.dto.request.HotelRequest;
+import com.lenin.hotel.hotel.dto.response.HotelResponse;
+import com.lenin.hotel.hotel.dto.response.UserResponse;
+import com.lenin.hotel.hotel.service.IHotelService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+@RestController
+@RequestMapping(&quot;/api&quot;)
+@RequiredArgsConstructor
+public class HotelController {
+    private final IHotelService hotelService;
+    private final IUserService userService;
+
+
+    @PostMapping(&quot;/hotelOwner/createHotel&quot;)
+    public ResponseEntity&lt;?&gt; createRoom(@Valid @RequestBody HotelRequest hotelRequest) {
+<span class="fc" id="L32">        hotelService.createHotel(hotelRequest);</span>
+<span class="fc" id="L33">        return ResponseEntity.ok().body(Map.of(&quot;message&quot;, &quot;Room created successfully!&quot;));</span>
+    }
+
+    @GetMapping(&quot;/hotelOwner/hotels&quot;)
+    public ResponseEntity&lt;?&gt; getHotel() {
+
+<span class="fc" id="L39">       return ResponseEntity.ok().body(hotelService.getHotelsByHotelOwnerId());</span>
+    }
+
+    @GetMapping(&quot;/admin/active/{hotelOwnerId}&quot;)
+    public ResponseEntity&lt;?&gt; setHotelOwner(@PathVariable Integer hotelOwnerId) {
+<span class="fc" id="L44">        hotelService.activeHotelOwner(hotelOwnerId);</span>
+<span class="fc" id="L45">        return ResponseEntity.ok().body(Map.of(&quot;message&quot;, &quot;Activated successfully!&quot;));</span>
+    }
+
+    @GetMapping(&quot;/admin/dashboard/overview&quot;)
+    public ResponseEntity&lt;?&gt; getHotelOverview() {
+<span class="fc" id="L50">        return ResponseEntity.ok().body(hotelService.dashboardOverview());</span>
+    }
+
+    @GetMapping(&quot;/admin/dashboard/monthlyBooking&quot;)
+    public ResponseEntity&lt;?&gt; getHotelMonthlyBooking() {
+<span class="nc" id="L55">        return ResponseEntity.ok().body(hotelService.dashboardMonthlyBooking());</span>
+    }
+    @GetMapping(&quot;/admin/dashboard/hotelByLocation&quot;)
+    public ResponseEntity&lt;?&gt; getHotelByLocation() {
+<span class="nc" id="L59">        return ResponseEntity.ok().body(hotelService.hotelByLocation());</span>
+    }
+    @GetMapping(&quot;/admin/dashboard/combinedChart&quot;)
+    public ResponseEntity&lt;?&gt; getCombinedChartData() {
+<span class="nc" id="L63">        return ResponseEntity.ok().body(hotelService.getCombinedChartData());</span>
+    }
+    @GetMapping(&quot;/admin/dashboard/top-hotels-revenue&quot;)
+    public ResponseEntity&lt;?&gt; getTopHotelsByRevenue(@RequestParam Integer numTop) {
+<span class="nc" id="L67">        return ResponseEntity.ok().body(hotelService.getTopHotelsByRevenue(numTop));</span>
+    }
+
+
+    @GetMapping(&quot;/public/getHotel&quot;)
+    public ResponseEntity&lt;?&gt; getAllRooms(
+            @RequestParam(defaultValue = &quot;0&quot;) int page,
+            @RequestParam(defaultValue = &quot;10&quot;) int size,
+            @RequestParam(defaultValue = &quot;&quot;) Integer hotelId,
+            @RequestParam(defaultValue = &quot;&quot;) Integer ownerId,
+            @RequestParam(defaultValue = &quot;&quot;) Double latitude,
+            @RequestParam(defaultValue = &quot;&quot;) Double longitude
+            ) {
+<span class="fc" id="L80">        Pageable pageable = PageRequest.of(page, size);</span>
+<span class="fc" id="L81">        List&lt;HotelResponse&gt; rooms = hotelService.getAllHotel(pageable, hotelId, ownerId, latitude, longitude);</span>
+<span class="fc" id="L82">        return ResponseEntity.ok().body(rooms);</span>
+    }
+
+    @GetMapping(&quot;public/cicdtest&quot;)
+    public ResponseEntity&lt;?&gt; getAllRooms(){
+<span class="nc" id="L87">        return ResponseEntity.ok().body(Map.of(&quot;message&quot;, &quot;sucesscicd&quot;));</span>
+    }
+
+    @GetMapping(&quot;/public/hotel/{id}&quot;)
+    public ResponseEntity&lt;?&gt; getHotel(@PathVariable Integer id) {
+<span class="fc" id="L92">        HotelResponse hotelResponse = hotelService.getHotelById(id);</span>
+<span class="fc" id="L93">        return ResponseEntity.ok().body(hotelResponse);</span>
+    }
+    @GetMapping(&quot;/public/owner/{id}&quot;)
+    public ResponseEntity&lt;?&gt; getHotelOwner(@PathVariable Integer id) {
+<span class="fc" id="L97">        UserResponse userResponse = userService.getHotelOwner(id);</span>
+<span class="fc" id="L98">        return ResponseEntity.ok().body(userResponse);</span>
+    }
+
+    @GetMapping(&quot;/public/hotel/search&quot;)
+    public ResponseEntity&lt;?&gt; searchHotels(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer locationId,
+            @RequestParam(required = false) Double rating,
+            @RequestParam(required = false) Set&lt;Integer&gt; amenityIds,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Integer minRoomsAvailable,
+            @RequestParam(required = false) String hotelType,
+            @RequestParam(required = false) ZonedDateTime checkIn,
+            @RequestParam(required = false) ZonedDateTime checkOut) {
+
+<span class="fc" id="L114">        return ResponseEntity.ok().body(hotelService.searchHotels(name, locationId, rating,</span>
+                amenityIds, minPrice, maxPrice, minRoomsAvailable, hotelType, checkIn, checkOut));
+    }
+
+    @PostMapping(&quot;/hotelOwner/changePrice&quot;)
+    public ResponseEntity&lt;?&gt; changePrice(@Valid @RequestBody ChangePriceRequest changePriceRequest) {
+<span class="fc" id="L120">        hotelService.changePrice(changePriceRequest);</span>
+<span class="fc" id="L121">        return ResponseEntity.ok().body(Map.of(&quot;message&quot;, &quot;Price changed successfully!&quot;));</span>
+    }
+
+    @GetMapping(&quot;/hotelOwner/sendReport&quot;)
+    public ResponseEntity&lt;?&gt; sendHotelOwnerReport() {
+        try {
+<span class="fc" id="L127">            hotelService.generateAndSendHotelOwnerReport();</span>
+<span class="fc" id="L128">            return ResponseEntity.ok().body(Map.of(&quot;message&quot;, &quot;Report generated successfully!&quot;));</span>
+<span class="nc" id="L129">        } catch (RuntimeException e) {</span>
+<span class="nc" id="L130">            return ResponseEntity.badRequest().body(Map.of(&quot;message&quot;, e.getMessage()));</span>
+        }
+    }
+
+    @PatchMapping(&quot;/hotelOwner/update/hotel/{id}&quot;)
+    public ResponseEntity&lt;?&gt; updateHotel(
+            @PathVariable(&quot;id&quot;) Integer hotelId,
+            @RequestBody JsonNode hotelJson) {
+
+<span class="fc" id="L139">        hotelService.updateHotel(hotelId, hotelJson);</span>
+<span class="fc" id="L140">        return ResponseEntity.ok().body(Map.of(&quot;message&quot;, &quot;Hotel updated successfully!&quot;));</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

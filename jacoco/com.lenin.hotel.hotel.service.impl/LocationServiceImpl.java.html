@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LocationServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">hotel</a> &gt; <a href="index.source.html" class="el_package">com.lenin.hotel.hotel.service.impl</a> &gt; <span class="el_source">LocationServiceImpl.java</span></div><h1>LocationServiceImpl.java</h1><pre class="source lang-java linenums">package com.lenin.hotel.hotel.service.impl;
+
+import com.lenin.hotel.hotel.model.Location;
+import com.lenin.hotel.hotel.dto.response.LocationResponse;
+import com.lenin.hotel.hotel.repository.LocationRepository;
+import com.lenin.hotel.hotel.service.ILocationService;
+import com.lenin.hotel.hotel.utils.HotelUtils;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class LocationServiceImpl implements ILocationService {
+    private final LocationRepository locationRepository;
+    @Override
+    public void createLocation(Map&lt;String, String&gt; locationRequest) {
+<span class="fc" id="L23">        String locationName = locationRequest.get(&quot;name&quot;);</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if (locationRepository.existsByName(locationName)) {</span>
+<span class="fc" id="L25">            throw new IllegalArgumentException(&quot;Location with name '&quot; + locationName + &quot;' already exists.&quot;);</span>
+        }
+<span class="fc" id="L27">        Location location = Location.builder()</span>
+<span class="fc" id="L28">                .name(locationName)</span>
+<span class="fc" id="L29">                .build();</span>
+<span class="fc" id="L30">        locationRepository.save(location);</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    public List&lt;LocationResponse&gt; getAllLocation() {
+<span class="fc" id="L35">        List&lt;Location&gt; locations = locationRepository.findAll();</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (locations.isEmpty()) {</span>
+<span class="fc" id="L37">            return List.of(); // Return an empty list</span>
+        }
+<span class="fc" id="L39">        return locations.stream().map(HotelUtils::buildLocationResponse).collect(Collectors.toList());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
