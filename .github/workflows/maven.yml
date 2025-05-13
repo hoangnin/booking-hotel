@@ -21,7 +21,8 @@ jobs:
       MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
       SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
     permissions:
-      contents: read
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -42,6 +43,17 @@ jobs:
 
       - name: Run tests with coverage
         run: mvn clean verify --no-transfer-progress
+
+      - name: Generate JaCoCo HTML Report
+        run: mvn jacoco:report
+
+      - name: Deploy JaCoCo report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.REPO_TOKEN }}
+          publish_dir: ./target/site/jacoco
+          publish_branch: gh-pages
+          destination_dir: jacoco
 
       - name: Upload JaCoCo Report as Artifact
         uses: actions/upload-artifact@v4
