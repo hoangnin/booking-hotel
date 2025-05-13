@@ -64,7 +64,9 @@ jobs:
         run: |
           echo "✅ JaCoCo Report available at:"
           echo "https://hoangnin.github.io/booking-hotel/jacoco/index.html"
-      
+      - name: Add link to coverage report in summary
+        run: echo "🔗 [View JaCoCo Report](https://hoangnin.github.io/booking-hotel/jacoco/index.html)" >> $GITHUB_STEP_SUMMARY
+
 
       - name: Publish to Registry
         uses: elgohr/Publish-Docker-Github-Action@v5
