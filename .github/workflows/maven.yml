@@ -50,7 +50,7 @@ jobs:
       - name: Deploy JaCoCo report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.REPO_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./target/site/jacoco
           publish_branch: gh-pages
           destination_dir: jacoco
@@ -60,6 +60,10 @@ jobs:
         with:
           name: jacoco-report
           path: target/site/jacoco
+      - name: Output coverage report URL
+        run:
+          echo "✅ JaCoCo Report available at: https://hoangnin.github.io/booking-hotel/jacoco/index.html"
+
 
       - name: Publish to Registry
         uses: elgohr/Publish-Docker-Github-Action@v5
