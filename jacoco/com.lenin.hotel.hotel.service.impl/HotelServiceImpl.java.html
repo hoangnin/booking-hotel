@@ -194,7 +194,7 @@ public class HotelServiceImpl implements IHotelService {
 <span class="nc" id="L194">            throw new RuntimeException(&quot;No hotels found for this user.&quot;);</span>
         }
         byte[] pdfData;
-<span class="pc bpc" id="L197" title="1 of 4 branches missed.">        if (user.getRoles().stream().anyMatch(role -&gt; role.getName() == ERole.ROLE_HOTEL)) {</span>
+<span class="pc bpc" id="L197" title="2 of 4 branches missed.">        if (user.getRoles().stream().anyMatch(role -&gt; role.getName() == ERole.ROLE_HOTEL)) {</span>
 <span class="fc" id="L198">            pdfData = pdfGeneratorService.generateAdminHotelReport(hotels);</span>
         }else {
 <span class="nc" id="L200">            pdfData = pdfGeneratorService.generateOwnerHotelReport(user.getUsername(), hotels);</span>

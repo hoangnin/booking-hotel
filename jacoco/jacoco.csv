@@ -34,7 +34,7 @@ hotel,com.lenin.hotel.common.exception,StripeException,0,9,0,0,0,4,0,2,0,2
 hotel,com.lenin.hotel.hotel.service.impl,BookingServiceImpl,31,130,1,3,3,28,5,4,4,3
 hotel,com.lenin.hotel.hotel.service.impl,AmenityServiceImpl,0,36,0,2,0,10,0,3,0,2
 hotel,com.lenin.hotel.hotel.service.impl,ReviewServiceImpl,2,210,2,8,0,46,2,8,0,5
-hotel,com.lenin.hotel.hotel.service.impl,HotelServiceImpl,835,657,59,27,140,141,72,26,33,22
+hotel,com.lenin.hotel.hotel.service.impl,HotelServiceImpl,836,656,60,26,140,141,73,25,33,22
 hotel,com.lenin.hotel.hotel.service.impl,LocationServiceImpl,0,44,0,4,0,12,0,4,0,2
 hotel,com.lenin.hotel.payment.service.impl,PaymentServiceImpl,20,184,7,7,6,55,7,9,0,9
 hotel,com.lenin.hotel.authentication.service.impl,AdminServiceImpl,0,135,0,6,0,25,0,11,0,8
